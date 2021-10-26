@@ -1,5 +1,4 @@
-# 
-## 
+
 Matlab codes perform Preconditioner in standard iterative refinement and GMRES iterative refinement
 sir3.m is a function that uses preconditiner M iterative refinement with three precisions.
 spai_hh,spai_ss,spai_dd for getting matrix M in half,single and double precision.
