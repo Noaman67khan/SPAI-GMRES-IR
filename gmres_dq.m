@@ -1,17 +1,16 @@
-function [x, error, its, flag] = gmres_dq( A, x, b,espai,alpha,beta, restrt, max_it, tol)
+function [x, error, its, flag] = gmres_dq( A, b, X, M, restrt, max_it, tol)
 %GMRES_DQ   Left-preconditioned GMRES in double/quad precision
-%   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
+%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Double precision used throughout, except in applying (U\L\A) to a vector 
+%   Double precision used throughout, except in applying (M*A) to a vector 
 %   which is done in quad precision using Advanpix multiprecision toolbox
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           L        REAL L factor of lu(A)
-%           U        REAL U factor of lu(A)
+%           M        Sparse approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -31,15 +30,10 @@ its = 0;
 A = double(A);
 b = double(b);
 x = double(x);
-%Cast half precision L and U factors as doubles
-%L = double(L);
-%U = double(U);
-M = spai(A,espai,alpha,beta);
 M = double(M);
 
 rtmp = b-A*x;
 r = mp(double(M),34)*mp(double(rtmp),34);
-%r = mp(double(U),34)\r;
 r = double(r);
 
 bnrm2 = norm(r);
