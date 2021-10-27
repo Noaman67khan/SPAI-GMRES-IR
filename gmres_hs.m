@@ -1,17 +1,16 @@
 function [x, error, its, flag] = gmres_hs( A, x, b, M, restrt, max_it, tol)
 %GMRES_HS   Left-preconditioned GMRES in half/single precision
-%   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
+%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Half precision used throughout, except in applying (U\L\A) to a vector 
+%   Half precision used throughout, except in applying (M*A) to a vector 
 %   which is done in single precision
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           L        REAL L factor of lu(A)
-%           U        REAL U factor of lu(A)
+%           M        Sparse approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
