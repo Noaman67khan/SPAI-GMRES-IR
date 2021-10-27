@@ -1,4 +1,4 @@
-function [x, error, its, flag] = gmres_dq( A, b, X, M, restrt, max_it, tol)
+function [x, error, its, flag] = gmres_dq( A, x, b, M, restrt, max_it, tol)
 %GMRES_DQ   Left-preconditioned GMRES in double/quad precision
 %   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
