@@ -1,4 +1,4 @@
-function [x, error, its, flag] = gmres_hs( A, x, b, L, U, restrt, max_it, tol)
+function [x, error, its, flag] = gmres_hs( A, x, b, M, restrt, max_it, tol)
 %GMRES_HS   Left-preconditioned GMRES in half/single precision
 %   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
@@ -31,14 +31,12 @@ its = 0;
 A = chop(A);
 b = chop(b);
 x = chop(x);
-L = chop(L);
-U = chop(U);
+M = chop(M);
 
 
 rtmp = b-A*x;
 
-r = single(L)\single(rtmp);
-r = single(U)\single(r);
+r = single(M)*single(rtmp);
 r = chop(r);
 
 bnrm2 = norm(r );
@@ -59,7 +57,7 @@ e1(1) = chop(1.0);
 
 for iter = 1:max_it,                              % begin iteration
     rtmp = chop(chop(b)-chop(A*x));
-    r = single(U)\(single(L)\single(rtmp));
+    r = single(M)*single(rtmp));
     r = chop(r);
     
     V(:,1) = r / norm( r );
@@ -68,7 +66,7 @@ for iter = 1:max_it,                              % begin iteration
         its = its+1;
         vcur = V(:,i);      
         
-        vcur = single(U)\(single(L)\(single(A)*single(vcur)));
+        vcur = single(M)*(single(A)*single(vcur)));
         
         w = chop(vcur);
       
@@ -103,7 +101,7 @@ for iter = 1:max_it,                              % begin iteration
     addvec = V(:,1:m)*y;
     x = x + addvec;                            % update approximation
     rtmp = b-A*x;
-    r = single(U)\(single(L)\single(rtmp));           % compute residual
+    r = single(M)*single(rtmp));           % compute residual
     r = chop(r);
     s(i+1) = norm(r);
     error = [error,s(i+1) / bnrm2];                        % check convergence
