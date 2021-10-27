@@ -1,7 +1,7 @@
-function [x, error, its, flag] = gmres_ss( A, x, b,espai,alpha,beta, M, restrt, max_it, tol)
+function [x, error, its, flag] = gmres_ss( A, x, b, M, restrt, max_it, tol)
 %GMRES_SS   Left-preconditioned GMRES in single precision without the extra
 % double precision for factorization an preconditioner application
-%   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
+%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
@@ -10,8 +10,7 @@ function [x, error, its, flag] = gmres_ss( A, x, b,espai,alpha,beta, M, restrt, 
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           L        REAL L factor of lu(A)
-%           U        REAL U factor of lu(A)
+%           M        Approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -29,15 +28,10 @@ its = 0;
 A = single(A);
 b = single(b);
 x = single(x);
-
-%Cast half precision L and U factors to working precision
-%L = single(L);
-%U = single(U);
-M = spai(A,espai,alpha,beta);
+M = single(M);
 rtmp = b-A*x;
 
-r = single(L)\single(rtmp);
-r = single(U)\single(r);
+r = single(M)*single(rtmp);
 r = single(r);
 
 bnrm2 = norm(r );
@@ -58,7 +52,7 @@ e1(1) = single(1.0);
 
 for iter = 1:max_it,                              % begin iteration
     rtmp = single(b-A*x);
-    r = single(U)\(single(L)\single(rtmp));
+    r = single(M)*single(rtmp);
     r = single(r);
     
     V(:,1) = r / norm( r );
@@ -67,7 +61,7 @@ for iter = 1:max_it,                              % begin iteration
         its = its+1;
         vcur = V(:,i);      
         
-        vcur = single(U)\(single(L)\(single(A)*single(vcur)));
+        vcur = single(M)*(single(A)*single(vcur));
         
         w = single(vcur);
       
@@ -103,7 +97,7 @@ for iter = 1:max_it,                              % begin iteration
     addvec = V(:,1:m)*y;
     x = x + addvec;                            % update approximation
     rtmp = b-A*x;
-    r = single(U)\(single(L)\single(rtmp));           % compute residual
+    r = single(M)*single(rtmp);           % compute residual
     r = single(r);
     s(i+1) = norm(r);
     error = [error,s(i+1) / bnrm2];                        % check convergence
