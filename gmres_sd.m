@@ -1,17 +1,16 @@
-function [x, error, its, flag] = gmres_sd( A, x, b,espai,alpha,beta, M,restrt, max_it, tol)
+function [x, error, its, flag] = gmres_sd( A, x, b, M,restrt, max_it, tol)
 % GMRES_SD   Left-preconditioned GMRES in single/double precision
-%   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
+%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Single precision used throughout, except in applying (U\L\A) to a vector 
+%   Single precision used throughout, except in applying (M*A) to a vector 
 %   which is done in double precision
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           L        REAL L factor of lu(A)
-%           U        REAL U factor of lu(A)
+%           M        Sparse Approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -29,16 +28,11 @@ its = 0;
 A = single(A);
 b = single(b);
 x = single(x);
-%Cast half precision L and U factors to working precision
-%L = single(L);
-%U = single(U);
-M = spai_ss(A,espai,alpha,beta);
 M = single(M);
 
 rtmp = b-A*x;
 
 r = double(M)*double(rtmp);
-%r = double(U)\double(r);
 r = single(r);
 
 bnrm2 = norm(r );
