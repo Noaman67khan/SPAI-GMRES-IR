@@ -146,7 +146,7 @@ while ~cged
     
     %Call GMRES to solve for correction term
     if precw == 0
-        [d, err, its, ~] = gmres_hh( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
+        [d, err, its, ~] = gmres_hs( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
     elseif precw == 2
         [d, err, its, ~] = gmres_dq( A, zeros(n,1), double(rd1), M, n, 1, gtol);
     else

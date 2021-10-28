@@ -1,9 +1,9 @@
 function M = spai_hh(A,espai,alpha,beta)
-A=chop(A);
-n=length(A);
-J=spones(A);
-I=eye(n);
-M=zeros(n);
+A = chop(A);
+n = length(A);
+J = spones(A');
+I = eye(n);
+M = zeros(n);
 for k= 1:n
     %ek is kth column of identity
     ek = I(:,k);
@@ -21,12 +21,17 @@ for k= 1:n
         
         Atk = A(Ik,Jk);
         etk = ek(Ik);
-        [Qt,Rt] = qr(Atk,0);
+        
+        %QR factorization in half precision with scaling
+        [Qt,Rt] = house_qr_lp(chop(Atk),0); % half precision via advanpix
 
-        Mtk = Rt\(Qt'*etk);
-        rtk = chop(Atk)*chop(Mtk) - etk;
-        if norm(rtk) < espai
-            [norm(rtk),k];
+
+
+        Mtk = chop(Rt\chop(chop(Qt')*chop(etk)));
+        rtk = chop(chop(Atk)*chop(Mtk) - etk);
+        [norm(rtk),k]
+        if norm(double(rtk)) < espai
+            [norm(rtk),k]
             break
         end
          
@@ -54,9 +59,9 @@ for k= 1:n
         for jj = 1:numel(Jtk)
             j = Jtk(jj);
             
-            n2 = norm(full(A(Ik,j)));
+            n2 = norm(full(chop(A(Ik,j))));
           
-            rojk = abs((n1^2-((rtk'*A(Ik,j))^2/(n2^2))))^0.5;
+            rojk = abs(chop(n1^2-((chop(rtk')*chop(A(Ik,j)))^2/chop(n2^2))))^0.5;
             rok = rok + rojk;
             newrow = [j rojk];
             Rojk = [Rojk ; newrow];

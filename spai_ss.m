@@ -1,9 +1,9 @@
 function M = spai_ss(A,espai,alpha,beta)
 A=single(A);
 n=length(A);
-J=spones(A);
+J=spones(A');
 I=eye(n);
-M=zeros(n);
+M=single(zeros(n));
 for k= 1:n
     %ek is kth column of identity
     ek = I(:,k);
@@ -19,12 +19,12 @@ for k= 1:n
             end
         end
         
-        Atk = A(Ik,Jk);
+        Atk = single(A(Ik,Jk));
         etk = ek(Ik);
         [Qt,Rt] = qr(Atk,0);
 
-        Mtk = Rt\(Qt'*etk);
-        rtk = single(Atk)*single(Mtk) - etk;
+        Mtk = single(Rt)\(single(Qt')*single(etk));
+        rtk = single(Atk)*single(Mtk) - single(etk);
         if norm(rtk) < espai
             [norm(rtk),k];
             break

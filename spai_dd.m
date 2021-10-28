@@ -1,7 +1,7 @@
 function M = spai_dd(A,espai,alpha,beta)
 A=double(A);
 n=length(A);
-J=spones(A);
+J=spones(A');
 I=eye(n);
 M=zeros(n);
 for k= 1:n
