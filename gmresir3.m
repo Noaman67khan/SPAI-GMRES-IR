@@ -1,9 +1,9 @@
-function x = gmresir3(A,b,espai,alpha,beta,precf,precw,precr,iter_max,gtol)
+function x = gmresir3(A, x, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
 %GMRESIR3  GMRES-based iterative refinement in three precisions.
 %     x = gmresir3(A,b,precf,precw,precr,iter_max,gtol) solves Ax = b using gmres-based
 %     iterative refinement with at most iter_max ref. steps and GMRES convergence
 %     tolerance gtol, with
-%     LU factors computed in precision precf:
+%     M computed in precision precf:
 %       * half if precf = 0,
 %       * single if precf = 1,
 %       * double if precf = 2,
@@ -40,21 +40,18 @@ if precw == 0
     uws = 'half';
     A = chop(A);
     b = chop(b);
-    %M = spai_hh(A,espai,alpha,beta);
     u = eps(chop(1));
 elseif precw == 2
     fprintf('**** Working precision is double.\n')
     uws = 'double';
     A = double(A);
     b = double(b);
-    %M = spai_dq(A,espai,alpha,beta);
     u = eps('double');
 else
     fprintf('**** Working precision is single.\n')
     uws = 'single';
     A = single(A);
     b = single(b);
-    %M = spai_ss(A,espai,alpha,beta);
     u = eps('single');
 end
 
@@ -72,24 +69,14 @@ end
 
 xact = double(mp(double(A),34)\mp(double(b),34));  
 
-%Compute LU factorization
+%Compute M using Spai
 if precf == 1
-    %[L,U,P] = lu(single(A));
-    %LL = single(double(P')*double(L));
-    %x =  U\(L\(P*single(b)) )
     M = spai_ss(A,espai,alpha,beta);
     x = M*single(b);
 elseif precf == 2
-    %[L,U,P] = lu(double(A));
-    %LL = double(double(P')*double(L));
-    %x =  U\(L\(P*double(b)) );
     M = spai_dd(A,espai,alpha,beta);
     x = M*double(b);
 else
-    %[L,U,p] = lu(fp16(A));
-    %I = fp16(eye(n)); P = I(p,:);
-    %LL = fp16(double(P')*double(L));
-    %x =  U\(L\(P*fp16(b)) );
     M = spai_hh(A,espai,alpha,beta);
     x = M*chop(b);
 end
@@ -232,7 +219,7 @@ set(gca,'xtick',xlab);
 xlabel({'refinement step'},'Interpreter','latex');
 
 str_e = sprintf('%0.1e',kinfA);
-tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,')'); 
+tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,')'); 
 title(tt,'Interpreter','latex');
 
 h = legend('ferr','nbe','cbe');
