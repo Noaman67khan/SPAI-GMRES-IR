@@ -77,7 +77,8 @@ elseif precf == 2
     M = spai_dd(A,espai,alpha,beta);
     x = M*double(b);
 else
-    M = spai_hh(A,espai,alpha,beta);
+    %M = spai_hh(A,espai,alpha,beta);
+    M = spai_mp(A,espai,alpha,beta,4);
     x = M*chop(b);
 end
 
@@ -149,6 +150,7 @@ while ~cged
         [d, err, its, ~] = gmres_hs( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
     elseif precw == 2
         [d, err, its, ~] = gmres_dq( A, zeros(n,1), double(rd1), M, n, 1, gtol);
+        %[d, err, its, ~] = gmres_dq( A, zeros(n,1), double(rd1), eye(n), n, 1, gtol);
     else
         [d, err, its, ~] = gmres_sd( A, single(zeros(n,1)), single(rd1), M, n, 1, gtol);
     end
@@ -219,32 +221,37 @@ set(gca,'xtick',xlab);
 xlabel({'refinement step'},'Interpreter','latex');
 
 str_e = sprintf('%0.1e',kinfA);
-tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,')'); 
+str_eps = sprintf('%0.1f',espai);
+tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,'), $$\, \varepsilon = $$',str_eps); 
 title(tt,'Interpreter','latex');
 
 h = legend('ferr','nbe','cbe');
 set(h,'Interpreter','latex');
 
-%Create phi plot
-fig2 = figure();
-semilogy(0:iter-2, lim, '-cx');
-hold on
-semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
-hold on
-semilogy(0:iter-2, etai, '-mo');
-hold on
-semilogy(0:iter-2, phi, '-kv');
-hold on
-semilogy(0:iter-1, ones(iter,1), '--k');
+% %Create phi plot
+% fig2 = figure();
+% semilogy(0:iter-2, lim, '-cx');
+% hold on
+% semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
+% hold on
+% semilogy(0:iter-2, etai, '-mo');
+% hold on
+% semilogy(0:iter-2, phi, '-kv');
+% hold on
+% semilogy(0:iter-1, ones(iter,1), '--k');
+% 
+% %Use same x labels as error plot
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% title(tt,'Interpreter','latex');
+% 
+% h = legend('$2u_s \kappa_{\infty}(A)\mu_i$','$2u_s$cond$(A)$', '$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
+% set(h,'Interpreter','latex');
 
-%Use same x labels as error plot
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-title(tt,'Interpreter','latex');
-
-h = legend('$2u_s \kappa_{\infty}(A)\mu_i$','$2u_s$cond$(A)$', '$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
-set(h,'Interpreter','latex');
+[L,U]=lu(A);
+fprintf('nnz(A) = %d, nnz(M) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(M), nnz(L+U), nnz(inv(A)));
+fprintf('GMRES its = %s\n', num2str(gmresits));
 
 end
