@@ -233,10 +233,6 @@ set(gca,'FontSize',7)
 a = get(gca,'Children');
 set(a,'LineWidth',1);
 set(a,'MarkerSize',10);
-
-
-%tt = strcat('SGMRES-IR');
-%title(tt,'Interpreter','latex');
 %%%%%%%%%%%%%%%%
 
 str_e = sprintf('%0.1e',kinfA);
