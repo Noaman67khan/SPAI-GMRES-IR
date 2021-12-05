@@ -1,4 +1,4 @@
-function x = gmresir3(A, x, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
+function x = gmresir3(A, x, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol,lim_num,savename)
 %GMRESIR3  GMRES-based iterative refinement in three precisions.
 %     x = gmresir3(A,b,precf,precw,precr,iter_max,gtol) solves Ax = b using gmres-based
 %     iterative refinement with at most iter_max ref. steps and GMRES convergence
@@ -77,8 +77,8 @@ elseif precf == 2
     M = spai_dd(A,espai,alpha,beta);
     x = M*double(b);
 else
-    %M = spai_hh(A,espai,alpha,beta);
-    M = spai_mp(A,espai,alpha,beta,4);
+    M = spai_hh(A,espai,alpha,beta);
+   % M = spai_mp(A,espai,alpha,beta,4);
     x = M*chop(b);
 end
 
@@ -205,6 +205,15 @@ semilogy(0:iter-1, cbe, '-gv');
 hold on
 semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
 
+
+%%%%%%%%%%%%%%%%%%%
+if (nargin==13)
+xlim([0 lim_num])
+xx = lim_num-numel(ferr)+2;
+hold on
+semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
+end
+%%%%%%%%%%%%%%%%%%%
 %Ensure only integers labeled on x axis
 atm = get(gca,'xticklabels');
 m = str2double(atm);
@@ -219,10 +228,21 @@ end
 set(gca,'xticklabels',xlab);
 set(gca,'xtick',xlab);
 xlabel({'refinement step'},'Interpreter','latex');
+%%%%%%%%%%%%%%
+set(gca,'FontSize',7)
+a = get(gca,'Children');
+set(a,'LineWidth',1);
+set(a,'MarkerSize',10);
+
+
+%tt = strcat('SGMRES-IR');
+%title(tt,'Interpreter','latex');
+%%%%%%%%%%%%%%%%
 
 str_e = sprintf('%0.1e',kinfA);
 str_eps = sprintf('%0.1f',espai);
-tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,'), $$\, \varepsilon = $$',str_eps); 
+iter = sprintf('GMRES its = %s\n', num2str(gmresits));
+tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(A) = ',str_e,', \, (u_f,u,u_r) = $$ (',ufs,',',uws,',',urs,'), \, ',iter,', $$\, \varepsilon = $$',str_eps); 
 title(tt,'Interpreter','latex');
 
 h = legend('ferr','nbe','cbe');
@@ -249,9 +269,13 @@ set(h,'Interpreter','latex');
 % 
 % h = legend('$2u_s \kappa_{\infty}(A)\mu_i$','$2u_s$cond$(A)$', '$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
 % set(h,'Interpreter','latex');
+%Save figure as pdf
+if ~isempty(savename)
+    saveas(gcf, strcat(savename,'.pdf'));
+end
+
 
 [L,U]=lu(A);
 fprintf('nnz(A) = %d, nnz(M) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(M), nnz(L+U), nnz(inv(A)));
 fprintf('GMRES its = %s\n', num2str(gmresits));
-
 end
