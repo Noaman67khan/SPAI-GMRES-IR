@@ -74,7 +74,7 @@ if precf == 1
     M = spai_ss(A',espai,alpha,beta);
     x = M'*single(b);
 elseif precf == 2
-    M = spai_dd(A,espai,alpha,beta);
+    M = spai_dd(A',espai,alpha,beta);
     x = M'*double(b);
 else
     M = spai_hh(A',espai,alpha,beta);
