@@ -71,15 +71,15 @@ xact = double(mp(double(A),34)\mp(double(b),34));
 
 %Compute M using Spai
 if precf == 1
-    M = spai_ss(A,espai,alpha,beta);
-    x = M*single(b);
+    M = spai_ss(A',espai,alpha,beta);
+    x = M'*single(b);
 elseif precf == 2
     M = spai_dd(A,espai,alpha,beta);
-    x = M*double(b);
+    x = M'*double(b);
 else
-    M = spai_hh(A,espai,alpha,beta);
-   % M = spai_mp(A,espai,alpha,beta,4);
-    x = M*chop(b);
+    M = spai_hh(A',espai,alpha,beta);
+   % M = spai_mp(A',espai,alpha,beta,4);
+    x = M'*chop(b);
 end
 
 %Compute condition number of A, of preconditioned system At, cond(A), and
