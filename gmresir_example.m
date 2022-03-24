@@ -1,6 +1,5 @@
 %GMRESIR_EXAMPLE    Example script for comparing LU-IR and GMRES-IR (with 2 precisions)
-%   Generates data for plots in Figures 5.1 and 5.2 of MIMS EPrint 2017.12
-%   Note: Requires Advanpix multiprecision toolbox
+
 
 n = 100;
 maxit = 10;
