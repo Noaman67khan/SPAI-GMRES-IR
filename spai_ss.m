@@ -1,5 +1,5 @@
 function M = spai_ss(A,espai,alpha,beta)
-A=single(A);
+A=single(full(A));
 n=length(A);
 J=spones(A');
 I=eye(n);
