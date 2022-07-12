@@ -14,7 +14,6 @@ b=ones(n,1);
      gmresir3(full(A),zeros(n,1),ones(n,1),1,1,2,15,1e-4);
      %Run GMRES-IR with single,double,quad
      gmresir3(full(A),zeros(n,1),ones(n,1),1,2,4,15,1e-4);
-     axis([0 5 10.^(-30) 10.^(5)]);
      drawnow
      %Run GMRESIR_SPAI with half,single,double
      fprintf('Running GMRESIR_SPAI\n');
@@ -23,7 +22,6 @@ b=ones(n,1);
      gmresir3_spai(full(A), zeros(n,1), ones(n,1), .2, 50, 50, 1, 1, 2, 15, 1e-4);
      %Run GMRESIR_SPAI with single,double,quad
      gmresir3_spai(full(A), zeros(n,1), ones(n,1), .2, 50, 50, 1, 2, 4, 15, 1e-4);
-     axis([0 5 10.^(-30) 10.^(5)]);
      drawnow
      %Run GMRESIR_NP with half,single,double
      fprintf('Running GMRESIR_np\n');
@@ -32,5 +30,4 @@ b=ones(n,1);
      gmresir3_np(full(A), zeros(n,1), ones(n,1), 1, 1, 2, 15, 1e-4);
      %Run GMRESIR_NP with single,double,quad
      gmresir3_np(full(A), zeros(n,1), ones(n,1), 1, 2, 4, 15, 1e-4);
-     axis([0 5 10.^(-30) 10.^(5)]);
      drawnow
