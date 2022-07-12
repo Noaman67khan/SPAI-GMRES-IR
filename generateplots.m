@@ -1,4 +1,4 @@
-%Generate Plot Example script for comparing GMRES-IR with LU, GMRESIR_SPAI with GMRESIR_NP (with 3 precisions)
+%Generate Plot Example script for comparing GMRES-IR, GMRESIR_SPAI and GMRESIR_NP (with 3 precisions)
 %   Note: Requires Advanpix multiprecision toolbox
 clc;
 clear all
