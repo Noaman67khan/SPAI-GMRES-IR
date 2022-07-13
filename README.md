@@ -27,7 +27,7 @@ Carson, Erin, and Noaman Khan. "Mixed Precision Iterative Refinement with Sparse
 
 ## Requirements
 * This code requires the Advanpix Multiprecision Computing Toolbox for extended precision computations. 
-A free trial of Advanpix is available for download from https://www.advanpix.com/.Advanpix library for quadruple precision. 
+A free trial of Advanpix is available for download from https://www.advanpix.com/Advanpix library for quadruple precision. 
 
 * This code also requires functions https://github.com/higham/chop and https://github.com/SrikaraPranesh/Multi_precision_NLA_kernels
 
