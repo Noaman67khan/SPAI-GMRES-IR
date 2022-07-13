@@ -19,11 +19,11 @@ Carson, Erin, and Noaman Khan. "Mixed Precision Iterative Refinement with Sparse
 
 * **_gmres_hh.m, gmres_ss.m, and gmres_dd.m_** are functions that run left-LU-preconditioned GMRES using precisions half, single, and double, resp. All computations are performed in the working precision. 
 
-* **_gmres_spai_XY.m** are functions that run left-preconditioned GMRES preconditioned using a SPAI preconditioniner using precisions X/Y, as above.
+* **_gmres_spai_XY.m_** are functions that run left-preconditioned GMRES preconditioned using a SPAI preconditioniner using precisions X/Y, as above.
 
-* **_gmres_np_X.m** are functions that run GMRES with no preconditioning in precision X, as above. 
+* **_gmres_np_X.m_** are functions that run GMRES with no preconditioning in precision X, as above. 
 
-* **_generateplots.m** is an example script for experiment on matrix jpwh991, available from SuiteSparse.
+* **_generateplots.m_** is an example script for experiment on matrix jpwh991, available from SuiteSparse.
 
 ## Requirements
 * This code requires the Advanpix Multiprecision Computing Toolbox for extended precision computations. 
