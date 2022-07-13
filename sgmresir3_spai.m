@@ -1,6 +1,6 @@
-function x = gmresir3_spai(A, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
-%GMRESIR3_SPAI  GMRES-based iterative refinement in three precisions using SPAI preconditioning.
-%     Solves Ax = b using gmres-based
+function x = sgmresir3_spai(A, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
+%SGMRESIR3_SPAI  GMRES-based iterative refinement in three precisions using SPAI preconditioning.
+%     Solves Ax = b using GMRES-based
 %     iterative refinement with at most iter_max ref. steps and GMRES convergence
 %     tolerance gtol, with
 %     M computed in precision precf:
@@ -15,8 +15,7 @@ function x = gmresir3_spai(A, b, espai, alpha, beta, precf, precw, precr, iter_m
 %       * single if precr = 1,
 %       * double if precr = 2,
 %       * quad if precr = 4
-%     Within GMRES, the preconditioned system is applied in double the
-%     working precision.
+%     The working precision is used throughout the calls to GMRES
 %
 % Note: requires Advanpix multiprecision toolbox, 
 % chop library (https://github.com/higham/chop), and 
@@ -154,11 +153,11 @@ while ~cged
     
     %Call GMRES to solve for correction term
     if precw == 0
-        [d, err, its, ~] = gmres_spai_hs( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_hh( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
     elseif precw == 2
-        [d, err, its, ~] = gmres_spai_dq( A, zeros(n,1), double(rd1), M, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_dd( A, zeros(n,1), double(rd1), M, n, 1, gtol);
     else
-        [d, err, its, ~] = gmres_spai_sd( A, single(zeros(n,1)), single(rd1), M, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_ss( A, single(zeros(n,1)), single(rd1), M, n, 1, gtol);
     end
     
     %Compute quantities in bounds for plotting

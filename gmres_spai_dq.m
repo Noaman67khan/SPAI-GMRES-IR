@@ -1,6 +1,6 @@
 function [x, error, its, flag] = gmres_spai_dq( A, x, b, M, restrt, max_it, tol)
-%GMRES_DQ   Left-preconditioned GMRES in double/quad precision
-%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
+%GMRES_SPAI_DQ   Left-preconditioned GMRES in double/quad precision
+%   Solves Ax=b by solving the preconditioned linear system (M)Ax=(M)b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)

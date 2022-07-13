@@ -1,14 +1,21 @@
 function M = spai_ss(A,espai,alpha,beta)
-A=single(full(A));
-n=length(A);
-J=spones(A');
-I=eye(n);
-M=single(zeros(n));
-for k= 1:n
+% SPAI_SS Constructs a sparse approximate inverse in single precision
+%   A is the input matrix
+%   espai is the tolerance parameter for the quality of each column
+%   alpha is the number of steps for each column
+%   beta is the number of steps for adding nonzeros to the pattern
+%   M is the output sparse approximate inverse
+
+A = single(full(A));
+n = length(A);
+J = spones(A');
+I = eye(n);
+M = single(zeros(n));
+for k = 1:n
     %ek is kth column of identity
     ek = I(:,k);
     %Get index set Jk
-    Jk=find(J(:,k));
+    Jk = find(J(:,k));
   
     for step = 1:alpha
         %Construct set Ik
@@ -26,7 +33,7 @@ for k= 1:n
         Mtk = single(Rt)\(single(Qt')*single(etk));
         rtk = single(Atk)*single(Mtk) - single(etk);
         if norm(rtk) < espai
-            [norm(rtk),k];
+            %[norm(rtk),k];
             break
         end
          
@@ -76,7 +83,7 @@ for k= 1:n
         
         
     end
-    disp(k)
+    %disp(k)
     M(Jk,k)= Mtk;    
 end
 end

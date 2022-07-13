@@ -1,17 +1,14 @@
-function [x, error, its, flag] = gmres_np_hs( A, x, b, restrt, max_it, tol)
-%function [x, error, its, flag] = gmres_hs( A, x, b, M, restrt, max_it, tol)
-%GMRES_HS   Left-preconditioned GMRES in half/single precision
-%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
+function [x, error, its, flag] = gmres_np_h( A, x, b, restrt, max_it, tol)
+%GMRES_NP_H   Unpreconditioned GMRES in half precision
+%   Solves Ax=b 
 %   using the Generalized Minimal residual ( GMRES ) method.
-%   Currently uses (preconditioned) relative residual norm to check for convergence 
+%   Currently uses relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Half precision used throughout, except in applying (M*A) to a vector 
-%   which is done in single precision
+%   Half precision used throughout.
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           M        Sparse approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -22,7 +19,7 @@ function [x, error, its, flag] = gmres_np_hs( A, x, b, restrt, max_it, tol)
 %           flag     INTEGER: 0 = solution found to tolerance
 %                             1 = no convergence given max_it
 %
-%   Note: Requires Cleve Laboratory for half precision (fp16)
+
 
 flag = 0;
 its = 0;
@@ -31,14 +28,11 @@ its = 0;
 A = chop(A);
 b = chop(b);
 x = chop(x);
-%M = chop(M);
 
 
-rtmp = b-A*x;
 
-%r = single(M)*single(rtmp);
- r = single(rtmp);
-r = chop(r);
+rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
+r = chop(rtmp);
 
 bnrm2 = norm(r );
 if  ( bnrm2 == 0.0 ), bnrm2 = 1.0; end
@@ -57,57 +51,53 @@ e1    = chop(zeros(n,1));
 e1(1) = chop(1.0);
 
 for iter = 1:max_it,                              % begin iteration
-    rtmp = chop(chop(b)-chop(A*x));
-    %r = single(M)*single(rtmp));
-     r = single(rtmp);
-    r = chop(r);
+    rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
+    r = chop(rtmp);
     
-    V(:,1) = r / norm( r );
-    s = norm( r )*e1;
+    V(:,1) = chop(chop(r) / chop(norm( chop(r) )));
+    s = chop(norm( chop(r) )*chop(e1));
     for i = 1:m,                     % construct orthonormal basis via GS
         its = its+1;
-        vcur = V(:,i);      
+        vcur = chop(V(:,i));      
         
-        %vcur = single(M)*(single(A)*single(vcur)));
-        vcur = single(A)*single(vcur);
+        vcur = chop(A)*chop(vcur);
         
         w = chop(vcur);
       
         for k = 1:i,
-            H(k,i)= w'*V(:,k);
-            w = w - H(k,i)*V(:,k);
+            H(k,i)= chop(chop(w')*chop(V(:,k)));
+            w = chop(chop(w) - chop(chop(H(k,i))*chop(V(:,k))));
         end
         H(i+1,i) = norm( w );
-        V(:,i+1) = w / H(i+1,i);
+        V(:,i+1) = chop(chop(w) / chop(H(i+1,i)));
         for k = 1:i-1                              % apply Givens rotation
-            temp     =  cs(k)*H(k,i) + sn(k)*H(k+1,i);
-            H(k+1,i) = -sn(k)*H(k,i) + cs(k)*H(k+1,i);
+            temp     =  chop(chop(chop(cs(k))*chop(H(k,i))) + chop(chop(sn(k))*chop(H(k+1,i))));
+            H(k+1,i) = chop(chop(chop(-sn(k))*chop(H(k,i))) + chop(chop(cs(k))*chop(H(k+1,i))));
             H(k,i)   = temp;
         end
         [cs(i),sn(i)] = rotmat( H(i,i), H(i+1,i) ); % form i-th rotation matrix
-        temp   = cs(i)*s(i);                        % approximate residual norm
-        s(i+1) = -sn(i)*s(i);
+        temp   = chop(chop(cs(i))*chop(s(i)));                        % approximate residual norm
+        s(i+1) = chop(chop(-sn(i))*chop(s(i)));
         s(i)   = temp;
-        H(i,i) = cs(i)*H(i,i) + sn(i)*H(i+1,i);
+        H(i,i) = chop(chop(chop(cs(i))*chop(H(i,i))) + chop(chop(sn(i))*chop(H(i+1,i))));
         H(i+1,i) = 0.0;
-        error((iter-1)*m+i+1)  = abs(s(i+1)) / bnrm2;
+        error((iter-1)*m+i+1)  = chop(chop(abs(s(i+1))) / chop(bnrm2));
         if ( error((iter-1)*m+i+1) <= tol ),                        % update approximation
-            y = H(1:i,1:i) \ s(1:i);                 % and exit
-            addvec = V(:,1:i)*y;
-            x = x + addvec;
+            y = chop(chop(H(1:i,1:i)) \ chop(s(1:i)));                 % and exit
+            addvec = chop(chop(V(:,1:i))*chop(y));
+            x = chop(chop(x) + chop(addvec));
             break;
         end
     end
     
     if ( error(end) <= tol ), break, end
-    y = H(1:m,1:m) \ s(1:m);
-    addvec = V(:,1:m)*y;
-    x = x + addvec;                            % update approximation
-    rtmp = b-A*x;
-    r = single(M)*single(rtmp));           % compute residual
+    y = chop(chop(H(1:m,1:m)) \ chop(s(1:m)));
+    addvec = chop(chop(V(:,1:m))*chop(y));
+    x = chop(chop(x) + chop(addvec));                            % update approximation
+    rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
     r = chop(r);
-    s(i+1) = norm(r);
-    error = [error,s(i+1) / bnrm2];                        % check convergence
+    s(i+1) = chop(norm(r));
+    error = [error, chop(chop(s(i+1)) / chop(bnrm2))];                        % check convergence
     if ( error(end) <= tol ), break, end;
 end
 
@@ -126,7 +116,7 @@ if ( b == 0.0 ),
 elseif ( abs(b) > abs(a) ),
     temp = a / b;
     temp2 = temp*temp; 
-    s = 1.0 / fchop(sqrt(chop( 1.0 + temp2 )));
+    s = 1.0 / chop(sqrt(chop( 1.0 + temp2 )));
     c = temp * s;
 else
     temp = b / a;

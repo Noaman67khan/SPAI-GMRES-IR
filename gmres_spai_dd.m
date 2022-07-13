@@ -1,12 +1,10 @@
-function [x, error, its, flag] = gmres_np_dq( A, x, b,restrt, max_it, tol)
-%function [x, error, its, flag] = gmres_dq( A, x, b, M, restrt, max_it, tol)
-%GMRES_DQ   Left-preconditioned GMRES in double/quad precision
-%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
+function [x, error, its, flag] = gmres_spai_dd( A, x, b, M, restrt, max_it, tol)
+%GMRES_SPAI_DD   Left-preconditioned GMRES in double precision
+%   Solves Ax=b by solving the preconditioned linear system (M)Ax=(M)b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Double precision used throughout, except in applying (M*A) to a vector 
-%   which is done in quad precision using Advanpix multiprecision toolbox
+%   Double precision used throughout
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
@@ -22,7 +20,6 @@ function [x, error, its, flag] = gmres_np_dq( A, x, b,restrt, max_it, tol)
 %           flag     INTEGER: 0 = solution found to tolerance
 %                             1 = no convergence given max_it
 %
-%   Note: Requires Advanpix multiprecision toolbox
 
 flag = 0;
 its = 0;
@@ -31,11 +28,10 @@ its = 0;
 A = double(A);
 b = double(b);
 x = double(x);
-%M = double(M);
+M = double(M);
 
 rtmp = b-A*x;
-%r = mp(double(M),34)*mp(double(rtmp),34);
- r = mp(double(rtmp),34);
+r = double(M)*double(rtmp);
 r = double(r);
 
 bnrm2 = norm(r);
@@ -57,8 +53,7 @@ e1(1) = 1.0;
 for iter = 1:max_it,                              % begin iteration
     rtmp = b-A*x;
 
-    %r = mp(double(M),34)*mp(double(rtmp),34);
-    r = mp(double(rtmp),34);
+    r = double(M)*double(rtmp);
     r = double(r);
     
     V(:,1) = r / norm( r );
@@ -67,8 +62,7 @@ for iter = 1:max_it,                              % begin iteration
         its = its+1;
         vcur = V(:,i);
         
-        %vcur = mp(double(M),34)*(mp(double(A),34)*mp(double(vcur),34));
-         vcur = mp(double(A),34)*mp(double(vcur),34);
+        vcur = double(M)*(double(A)*double(vcur));
 
         w = double(vcur);
 
@@ -104,8 +98,7 @@ for iter = 1:max_it,                              % begin iteration
     x = x + addvec;                            % update approximation
     rtmp = b-A*x;
   
-     %r = mp(double(M),34)*mp(double(rtmp),34);           % compute residual
-     r = mp(double(rtmp),34);
+     r = double(M)*double(rtmp);           % compute residual
      r = double(r);
 
     s(i+1) = norm(r);

@@ -1,7 +1,7 @@
-function x = gmresir3_np(A, x, b, precf, precw, precr, iter_max, gtol)
-%function x = gmresir3(A, x, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
-%GMRESIR3  GMRES-based iterative refinement in three precisions.
-%     x = gmresir3(A,b,precf,precw,precr,iter_max,gtol) solves Ax = b using gmres-based
+function x = gmresir3_np(A, b, precf, precw, precr, iter_max, gtol)
+%GMRESIR3_NP  GMRES-based iterative refinement in three precisions with no
+%             preconditoning. 
+%     Solves Ax = b using gmres-based
 %     iterative refinement with at most iter_max ref. steps and GMRES convergence
 %     tolerance gtol, with
 %     M computed in precision precf:
@@ -17,7 +17,9 @@ function x = gmresir3_np(A, x, b, precf, precw, precr, iter_max, gtol)
 %       * double if precr = 2,
 %       * quad if precr = 4
 %
-%   Note: Requires Cleve Laboratory and Advanpix multiprecision toolbox
+% Note: requires Advanpix multiprecision toolbox, 
+% chop library (https://github.com/higham/chop), and 
+% https://github.com/SrikaraPranesh/Multi_precision_NLA_kernels
 
 if precf ~=0 && precf ~=1 && precf ~= 2, error('precf should be 0, 1 or 2'), end
 if precw ~=0 && precw ~=1 && precw ~= 2, error('precw should be 0, 1 or 2'), end
@@ -26,30 +28,30 @@ if precr ~=1 && precr ~= 2 && precr ~= 4, error('precr should be 1, 2, or 4'), e
 n = length(A);
 
 if precf == 1
-    fprintf('**** Factorization precision is single.\n')
+    %fprintf('**** Factorization precision is single.\n')
     ufs = 'S';
 elseif precf == 2
-    fprintf('**** Factorization precision is double.\n')
+    %fprintf('**** Factorization precision is double.\n')
     ufs = 'D';
 else
-    fprintf('**** Factorization precision is half.\n')
+    %fprintf('**** Factorization precision is half.\n')
     ufs = 'H';
 end
 
 if precw == 0
-    fprintf('**** Working precision is half.\n')
+    %fprintf('**** Working precision is half.\n')
     uws = 'H';
     A = chop(A);
     b = chop(b);
     u = eps(chop(1));
 elseif precw == 2
-    fprintf('**** Working precision is double.\n')
+    %fprintf('**** Working precision is double.\n')
     uws = 'D';
     A = double(A);
     b = double(b);
     u = eps('double');
 else
-    fprintf('**** Working precision is single.\n')
+    %fprintf('**** Working precision is single.\n')
     uws = 'S';
     A = single(A);
     b = single(b);
@@ -57,41 +59,31 @@ else
 end
 
 if precr == 1
-    fprintf('**** Residual precision is single.\n')
+    %fprintf('**** Residual precision is single.\n')
     urs = 'S';
 elseif precr == 2
-    fprintf('**** Residual precision is double.\n')
+    %fprintf('**** Residual precision is double.\n')
     urs = 'D';
 else
-    fprintf('**** Residual precision is quad.\n')
+    %fprintf('**** Residual precision is quad.\n')
     urs = 'Q';
     mp.Digits(34);
 end
 
 xact = double(mp(double(A),34)\mp(double(b),34));  
 
-%Compute M using Spai
+
 if precf == 1
-    %M = spai_ss(A,espai,alpha,beta);
-    %x = M*single(b);
     x = single(b);
 elseif precf == 2
-    %M = spai_dd(A,espai,alpha,beta);
-    %x = M*double(b);
     x = double(b);
 else
-    %M = spai_hh(A,espai,alpha,beta);
-    %M = spai_mp(A,espai,alpha,beta,4);
-    %x = M*chop(b);
     x = chop(b);
 end
 
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
-%At = double(mp(double(M),34))*mp(double(A),34);
-%At = mp(double(A),34);
 kinfA = cond(mp(double(A),34),'inf');
-%kinfAt = cond(mp(double(At),34),'inf');
 condAx = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34))*abs(xact),inf)/norm(xact,inf);
 condA = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34)),'inf');
 
@@ -152,14 +144,11 @@ while ~cged
     
     %Call GMRES to solve for correction term
     if precw == 0
-        %[d, err, its, ~] = gmres_hs( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
-         [d, err, its, ~] = gmres_np_hs( A, chop(zeros(n,1)), chop(rd1),n, 1, gtol);
+         [d, err, its, ~] = gmres_np_h( A, chop(zeros(n,1)), chop(rd1),n, 1, gtol);
     elseif precw == 2
-       % [d, err, its, ~] = gmres_dq( A, zeros(n,1), double(rd1), M, n, 1, gtol);
-        [d, err, its, ~] = gmres_np_dq( A, zeros(n,1), double(rd1), n, 1, gtol);
+        [d, err, its, ~] = gmres_np_d( A, zeros(n,1), double(rd1), n, 1, gtol);
     else
-        %[d, err, its, ~] = gmres_sd( A, single(zeros(n,1)), single(rd1), M, n, 1, gtol);
-          [d, err, its, ~] = gmres_np_sd( A, single(zeros(n,1)), single(rd1), n, 1, gtol);
+          [d, err, its, ~] = gmres_np_s( A, single(zeros(n,1)), single(rd1), n, 1, gtol);
     end
     
     %Compute quantities in bounds for plotting

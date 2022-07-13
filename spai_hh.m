@@ -1,14 +1,22 @@
 function M = spai_hh(A,espai,alpha,beta)
+% SPAI_HH Constructs a sparse approximate inverse in half precision
+%   A is the input matrix
+%   espai is the tolerance parameter for the quality of each column
+%   alpha is the number of steps for each column
+%   beta is the number of steps for adding nonzeros to the pattern
+%   M is the output sparse approximate inverse
+
 A = chop(A);
 n = length(A);
 J = spones(A');
 I = eye(n);
 M = zeros(n);
-for k= 1:n
+
+for k = 1:n
     %ek is kth column of identity
     ek = I(:,k);
     %Get index set Jk
-    Jk=find(J(:,k));
+    Jk = find(J(:,k));
   
     for step = 1:alpha
         %Construct set Ik
@@ -29,9 +37,9 @@ for k= 1:n
 
         Mtk = chop(Rt\chop(chop(Qt')*chop(etk)));
         rtk = chop(chop(Atk)*chop(Mtk) - etk);
-        [norm(rtk),k]
+       % [norm(rtk),k]
         if norm(double(rtk)) < espai
-            [norm(rtk),k]
+           % [norm(rtk),k]
             break
         end
          
@@ -81,7 +89,7 @@ for k= 1:n
         
         
     end
-    disp(k)
+    %disp(k)
     M(Jk,k)= Mtk;    
 end
 end

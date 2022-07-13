@@ -1,17 +1,15 @@
-function [x, error, its, flag] = gmres_hs( A, x, b, L, U, restrt, max_it, tol)
-%GMRES_HS   Left-preconditioned GMRES in half/single precision
-%   Solves Ax=b by solving the preconditioned linear system (LU)^{-1}Ax=(LU)^{-1}b
+function [x, error, its, flag] = gmres_spai_hh( A, x, b, M,restrt, max_it, tol)
+%GMRES_SPAI_HH   Left-preconditioned GMRES in half precision
+%   Solves Ax=b by solving the preconditioned linear system (M)Ax=(M)b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Half precision used throughout, except in applying (U\L\A) to a vector 
-%   which is done in single precision
+%   Half precision used throughout
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           L        REAL L factor of lu(A)
-%           U        REAL U factor of lu(A)
+%           M        Sparse approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -31,14 +29,10 @@ its = 0;
 A = chop(A);
 b = chop(b);
 x = chop(x);
-L = chop(L);
-U = chop(U);
-
+M = chop(M);
 rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
 
-r = single(L)\single(rtmp);
-r = single(U)\single(r);
-r = chop(r);
+r = chop(chop(M)*chop(rtmp));
 
 bnrm2 = norm(r );
 if  ( bnrm2 == 0.0 ), bnrm2 = 1.0; end
@@ -56,22 +50,22 @@ sn = chop(zeros(m,1));
 e1    = chop(zeros(n,1));
 e1(1) = chop(1.0);
 
-for iter = 1:max_it,                              % begin iteration
+for iter = 1:max_it                              % begin iteration
     rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
-    r = single(U)\(single(L)\single(rtmp));
+    r = chop(M)*chop(rtmp);
     r = chop(r);
     
     V(:,1) = chop(chop(r) / chop(norm( chop(r) )));
     s = chop(norm( chop(r) )*chop(e1));
-    for i = 1:m,                     % construct orthonormal basis via GS
+    for i = 1:m                     % construct orthonormal basis via GS
         its = its+1;
-        vcur = chop(V(:,i));       
+        vcur = chop(V(:,i));      
         
-        vcur = single(U)\(single(L)\(single(A)*single(vcur)));
+        vcur = chop(M)*chop(chop(A)*chop(vcur));
         
         w = chop(vcur);
       
-        for k = 1:i,
+        for k = 1:i
             H(k,i)= chop(chop(w')*chop(V(:,k)));
             w = chop(chop(w) - chop(chop(H(k,i))*chop(V(:,k))));
         end
@@ -98,18 +92,18 @@ for iter = 1:max_it,                              % begin iteration
     end
     
     if ( error(end) <= tol ), break, end
-    y = chop(chop(H(1:m,1:m)) \ chop(s(1:m)));
+ y = chop(chop(H(1:m,1:m)) \ chop(s(1:m)));
     addvec = chop(chop(V(:,1:m))*chop(y));
     x = chop(chop(x) + chop(addvec));                            % update approximation
     rtmp = chop(chop(b)-chop(chop(A)*chop(x)));
-    r = single(U)\(single(L)\single(rtmp));           % compute residual
+    r = chop(chop(M)*chop(rtmp));           % compute residual
     r = chop(r);
     s(i+1) = chop(norm(r));
     error = [error, chop(chop(s(i+1)) / chop(bnrm2))];                        % check convergence
     if ( error(end) <= tol ), break, end;
 end
 
-if ( error(end) > tol ) flag = 1; end;                 % converged
+if ( error(end) > tol ) flag = 1; end                 % converged
 
 
 

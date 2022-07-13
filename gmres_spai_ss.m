@@ -1,11 +1,10 @@
-function [x, error, its, flag] = gmres_np_sd( A, x, b,restrt, max_it, tol)
-% GMRES_SD   Left-preconditioned GMRES in single/double precision
-%   Solves Ax=b by solving the preconditioned linear system (M)^{-1}Ax=(M)^{-1}b
+function [x, error, its, flag] = gmres_spai_ss( A, x, b, M,restrt, max_it, tol)
+% GMRES_SPAI_SS   Left-preconditioned GMRES in single precision
+%   Solves Ax=b by solving the preconditioned linear system (M)Ax=(M)b
 %   using the Generalized Minimal residual ( GMRES ) method.
 %   Currently uses (preconditioned) relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Single precision used throughout, except in applying (M*A) to a vector 
-%   which is done in double precision
+%   Single precision used throughout
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
@@ -28,11 +27,11 @@ its = 0;
 A = single(A);
 b = single(b);
 x = single(x);
-%M = single(M);
+M = single(M);
 
-rtmp = b-A*x;
+rtmp = single(b-A*x);
 
-r = double(rtmp);
+r = M*rtmp;
 r = single(r);
 
 bnrm2 = norm(r );
@@ -53,8 +52,7 @@ e1(1) = single(1.0);
 
 for iter = 1:max_it,                              % begin iteration
     rtmp = single(b-A*x);
-    r = double(rtmp);
-    r = single(r);
+    r = single(M)*single(rtmp);
     
     V(:,1) = r / norm( r );
     s = norm( r )*e1;
@@ -62,9 +60,8 @@ for iter = 1:max_it,                              % begin iteration
         its = its+1;
         vcur = V(:,i);      
         
-        vcur = (double(A)*double(vcur));
+        w = single(M)*(single(A)*single(vcur));
         
-        w = single(vcur);
       
         for k = 1:i,
             H(k,i)= w'*V(:,k);
@@ -98,8 +95,7 @@ for iter = 1:max_it,                              % begin iteration
     addvec = V(:,1:m)*y;
     x = x + addvec;                            % update approximation
     rtmp = b-A*x;
-    r = double(rtmp);           % compute residual
-    r = single(r);
+    r = single(M)*single(rtmp);           % compute residual
     s(i+1) = norm(r);
     error = [error,s(i+1) / bnrm2];                        % check convergence
     if ( error(end) <= tol ), break, end;

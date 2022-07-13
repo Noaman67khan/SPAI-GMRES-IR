@@ -1,14 +1,22 @@
 function M = spai_dd(A,espai,alpha,beta)
-A=double(A);
-n=length(A);
-J=spones(A');
-I=eye(n);
-M=zeros(n);
-for k= 1:n
+% SPAI_DD Constructs a sparse approximate inverse in double precision
+%   A is the input matrix
+%   espai is the tolerance parameter for the quality of each column
+%   alpha is the number of steps for each column
+%   beta is the number of steps for adding nonzeros to the pattern
+%   M is the output sparse approximate inverse
+
+A = double(A);
+n = length(A);
+J = spones(A');
+I = eye(n);
+M = zeros(n);
+
+for k = 1:n
     %ek is kth column of identity
     ek = I(:,k);
     %Get index set Jk
-    Jk=find(J(:,k));
+    Jk = find(J(:,k));
   
     for step = 1:alpha
         %Construct set Ik
@@ -26,7 +34,7 @@ for k= 1:n
         Mtk = Rt\(Qt'*etk);
         rtk = double(Atk)*double(Mtk) - etk;
         if norm(rtk) < espai
-            [norm(rtk),k];
+            %[norm(rtk),k];
             break
         end
          
@@ -76,7 +84,7 @@ for k= 1:n
         
         
     end
-    disp(k)
+    %disp(k)
     M(Jk,k)= Mtk;    
 end
 end

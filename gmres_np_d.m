@@ -1,16 +1,14 @@
-function [x, error, its, flag] = gmres_spai_sd( A, x, b, M,restrt, max_it, tol)
-% GMRES_SPAI_SD   Left-preconditioned GMRES in single/double precision
-%   Solves Ax=b by solving the preconditioned linear system (M)Ax=(M)b
+function [x, error, its, flag] = gmres_np_dq( A, x, b,restrt, max_it, tol)
+%GMRES_NP_D   Unpreconditioned GMRES in double precision
+%   Solves Ax=b
 %   using the Generalized Minimal residual ( GMRES ) method.
-%   Currently uses (preconditioned) relative residual norm to check for convergence 
+%   Currently uses relative residual norm to check for convergence 
 %   (same as Matlab GMRES)
-%   Single precision used throughout, except in applying (M*A) to a vector 
-%   which is done in double precision
+%   Double precision used throughout.
 %
 %   input   A        REAL nonsymmetric positive definite matrix
 %           x        REAL initial guess vector
 %           b        REAL right hand side vector
-%           M        Sparse Approximate inverse of A
 %           restrt   INTEGER number of iterations between restarts
 %           max_it   INTEGER maximum number of iterations
 %           tol      REAL error tolerance
@@ -20,22 +18,21 @@ function [x, error, its, flag] = gmres_spai_sd( A, x, b, M,restrt, max_it, tol)
 %           iter     INTEGER number of (inner) iterations performed
 %           flag     INTEGER: 0 = solution found to tolerance
 %                             1 = no convergence given max_it
+%
 
 flag = 0;
 its = 0;
 
-%Ensure single working precision
-A = single(A);
-b = single(b);
-x = single(x);
-M = single(M);
+%Ensure double working precision
+A = double(A);
+b = double(b);
+x = double(x);
+
 
 rtmp = b-A*x;
+r = double(rtmp);
 
-r = double(M)*double(rtmp);
-r = single(r);
-
-bnrm2 = norm(r );
+bnrm2 = norm(r);
 if  ( bnrm2 == 0.0 ), bnrm2 = 1.0; end
 
 
@@ -44,28 +41,25 @@ if ( error(1) < tol ) return, end
 
 [n,~] = size(A);                                  % initialize workspace
 m = restrt;
-V(1:n,1:m+1) = single(zeros(n,m+1));
-H(1:m+1,1:m) = single(zeros(m+1,m));
-cs(1:m) = single(zeros(m,1));
-sn(1:m) = single(zeros(m,1));
-e1    = single(zeros(n,1));
-e1(1) = single(1.0);
+V(1:n,1:m+1) = zeros(n,m+1);
+H(1:m+1,1:m) = zeros(m+1,m);
+cs(1:m) = zeros(m,1);
+sn(1:m) = zeros(m,1);
+e1    = zeros(n,1);
+e1(1) = 1.0;
 
 for iter = 1:max_it,                              % begin iteration
-    rtmp = single(b-A*x);
-    r = double(M)*double(rtmp);
-    r = single(r);
+    rtmp = b-A*x;
+    r = double(rtmp);
     
     V(:,1) = r / norm( r );
     s = norm( r )*e1;
     for i = 1:m,                     % construct orthonormal basis via GS
         its = its+1;
-        vcur = V(:,i);      
+        vcur = V(:,i);
         
-        vcur = double(M)*(double(A)*double(vcur));
-        
-        w = single(vcur);
-      
+        w = A*vcur;
+
         for k = 1:i,
             H(k,i)= w'*V(:,k);
             w = w - H(k,i)*V(:,k);
@@ -83,7 +77,6 @@ for iter = 1:max_it,                              % begin iteration
         s(i)   = temp;
         H(i,i) = cs(i)*H(i,i) + sn(i)*H(i+1,i);
         H(i+1,i) = 0.0;
-        
         error((iter-1)*m+i+1)  = abs(s(i+1)) / bnrm2;
         if ( error((iter-1)*m+i+1) <= tol ),                        % update approximation
             y = H(1:i,1:i) \ s(1:i);                 % and exit
@@ -98,14 +91,17 @@ for iter = 1:max_it,                              % begin iteration
     addvec = V(:,1:m)*y;
     x = x + addvec;                            % update approximation
     rtmp = b-A*x;
-    r = double(M)*double(rtmp);           % compute residual
-    r = single(r);
+
+    r = double(rtmp);
+
     s(i+1) = norm(r);
-    error = [error,s(i+1) / bnrm2];                        % check convergence
+    error = [error, s(i+1) / bnrm2]; 
+    % check convergence
     if ( error(end) <= tol ), break, end;
 end
 
 if ( error(end) > tol ) flag = 1; end;                 % converged
+
 
 
 
