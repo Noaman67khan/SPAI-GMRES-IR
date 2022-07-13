@@ -74,19 +74,39 @@ xact = double(mp(double(A),34)\mp(double(b),34));
 
 %Compute M using Spai
 if precf == 1
-   
-    M = spai_ss(A',espai,alpha,beta);
-    M = M';
+    D = findscaling(A');
+    ATD = A'*D;
+    M = spai_ss(ATD,espai,alpha,beta);
+    M = M'*D';
     x = M*single(b);
 elseif precf == 2
-    M = spai_dd(A',espai,alpha,beta);
-    M = M';
+    D = findscaling(A');
+    ATD = A'*D;
+    M = spai_dd(ATD,espai,alpha,beta);
+    M = M'*D';
     x = M*double(b);
 else
-    M = spai_hh(A',espai,alpha,beta);
-    M = M';
+    D = findscaling(A');
+    ATD = A'*D;
+    M = spai_hh(ATD,espai,alpha,beta);
+    M = M'*D';
     x = M*chop(b);
 end
+% %Compute M using Spai
+% if precf == 1
+%    
+%     M = spai_ss(A',espai,alpha,beta);
+%     M = M';
+%     x = M*single(b);
+% elseif precf == 2
+%     M = spai_dd(A',espai,alpha,beta);
+%     M = M';
+%     x = M*double(b);
+% else
+%     M = spai_hh(A',espai,alpha,beta);
+%     M = M';
+%     x = M*chop(b);
+% end
 
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
