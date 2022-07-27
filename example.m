@@ -2,7 +2,7 @@
 
 clc;
 clear all
-data = load('bfwa782');
+data = load('orsreg_1');
 A = spconvert(data.Problem.A);
 
 % Find best reordering
@@ -41,5 +41,5 @@ switch ind
 end
 
 % Run experiments
-generateplots(A, Ap, 0, 1, 2, 1e-4, .5, 70, 70, 15)
+generateplots(A, Ap, 0, 1, 2, 1e-4, .5, 50, 50, 15)
 
