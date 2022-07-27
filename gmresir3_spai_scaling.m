@@ -255,7 +255,7 @@ str_e = sprintf('%0.1e',kinfA);
 str_a = sprintf('%0.1e',kinfAt);
 str_eps = sprintf('%0.1f',espai);
 %iter = sprintf('GMRES its = %s\n', num2str(gmresits));
-tt = strcat('SPAI-GMRES-IR,  $$\, \kappa_{\infty}(\tilde{A}) = ',str_a,', \, \varepsilon = $$',str_eps); 
+tt = strcat('SPAI-GMRES-IR-scaling,  $$\, \kappa_{\infty}(\tilde{A}) = ',str_a,', \, \varepsilon = $$',str_eps); 
 title(tt,'Interpreter','latex');
 
 h = legend('ferr','nbe','cbe');
