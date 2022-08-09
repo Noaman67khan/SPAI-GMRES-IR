@@ -2,8 +2,8 @@
 
 clc;
 clear all
-data = load('orsreg_1');
-A = spconvert(data.Problem.A);
+load('pores_3');
+A = Problem.A;
 
 % Find best reordering
 [L,U] = lu(A);
@@ -30,16 +30,22 @@ nnzND = nnz(L+U);
 switch ind
     case 1
         Ap = A;
+        besto = 'nat';
     case 2
         Ap = A(q,q);
+        besto = 'clp';
     case 3
         Ap = A(d,d);
+        besto = 'rcm';
     case 4
         Ap = A(r,r);
+        besto = 'amd';
     case 5
         Ap = A(p,p);
+        besto = 'nds';
 end
 
+besto
 % Run experiments
-generateplots(A, Ap, 0, 1, 2, 1e-4, .5, 50, 50, 15)
+generateplots(A, Ap, 1, 2, 4, 1e-8, .3, 5, 8, 15)
 

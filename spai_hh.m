@@ -8,7 +8,7 @@ function M = spai_hh(A,espai,alpha,beta)
 
 A = chop(A);
 n = length(A);
-J = spones(A');
+J = speye(n);
 I = eye(n);
 M = zeros(n);
 
@@ -36,6 +36,7 @@ for k = 1:n
 
 
         Mtk = chop(Rt\chop(chop(Qt')*chop(etk)));
+         M(Jk,k)= Mtk;   
         rtk = chop(chop(Atk)*chop(Mtk) - etk);
        % [norm(rtk),k]
         if norm(double(rtk)) < espai
@@ -90,6 +91,6 @@ for k = 1:n
         
     end
     %disp(k)
-    M(Jk,k)= Mtk;    
+%     M(Jk,k)= Mtk;    
 end
 end

@@ -8,7 +8,7 @@ function M = spai_ss(A,espai,alpha,beta)
 
 A = single(full(A));
 n = length(A);
-J = spones(A');
+J = speye(n);
 I = eye(n);
 M = single(zeros(n));
 for k = 1:n
@@ -31,6 +31,7 @@ for k = 1:n
         [Qt,Rt] = qr(Atk,0);
 
         Mtk = single(Rt)\(single(Qt')*single(etk));
+        M(Jk,k)= Mtk; 
         rtk = single(Atk)*single(Mtk) - single(etk);
         if norm(rtk) < espai
             %[norm(rtk),k];
@@ -84,6 +85,6 @@ for k = 1:n
         
     end
     %disp(k)
-    M(Jk,k)= Mtk;    
+%     M(Jk,k)= Mtk;    
 end
 end

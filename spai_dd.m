@@ -8,7 +8,7 @@ function M = spai_dd(A,espai,alpha,beta)
 
 A = double(A);
 n = length(A);
-J = spones(A');
+J = speye(n);
 I = eye(n);
 M = zeros(n);
 
@@ -32,6 +32,7 @@ for k = 1:n
         [Qt,Rt] = qr(Atk,0);
 
         Mtk = Rt\(Qt'*etk);
+        M(Jk,k)= Mtk; 
         rtk = double(Atk)*double(Mtk) - etk;
         if norm(rtk) < espai
             %[norm(rtk),k];
@@ -85,6 +86,6 @@ for k = 1:n
         
     end
     %disp(k)
-    M(Jk,k)= Mtk;    
+    %M(Jk,k)= Mtk;    
 end
 end
