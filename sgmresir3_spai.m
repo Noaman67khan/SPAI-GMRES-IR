@@ -74,23 +74,25 @@ xact = double(mp(double(A),34)\mp(double(b),34));
 
 %Compute M using Spai
 if precf == 1
-    D = findscaling(A');
-    ATD = A'*D;
+    %D = findscaling(A');
+    ATD = A';%*D;
     M = spai_ss(ATD,espai,alpha,beta);
-    M = M'*D';
+    M = M';%*D';
     x = M*single(b);
+   
 elseif precf == 2
     D = findscaling(A');
-    ATD = A'*D;
+    ATD = A';%*D;
     M = spai_dd(ATD,espai,alpha,beta);
-    M = M'*D';
+    M = M';%*D';
     x = M*double(b);
 else
     D = findscaling(A');
-    ATD = A'*D;
-    M = spai_hh(ATD,espai,alpha,beta);
-    M = M'*D';
+    ATD = A';%*D;
+    M = spai_hh(A,espai,alpha,beta);
+    M = M';%*D';
     x = M*chop(b);
+
 end
 % %Compute M using Spai
 % if precf == 1
@@ -111,6 +113,7 @@ end
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
 At = double(mp(double(M),34))*mp(double(A),34);
+
 kinfA = cond(mp(double(A),34),'inf');
 kinfAt = cond(mp(double(At),34),'inf');
 condAx = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34))*abs(xact),inf)/norm(xact,inf);
@@ -299,7 +302,7 @@ title(tt,'Interpreter','latex');
 % if ~isempty(savename)
 %     saveas(gcf, strcat(savename,'.pdf'));
 % end
-[L,U]=lu(A);
+
 fprintf('nnz(A) = %d, nnz(M) = %d, eps = %s, kinf(At) = %s\n', nnz(A), nnz(M), str_eps, str_a);
-fprintf('GMRES its = %s\n', num2str(gmresits));
+fprintf('GMRES its = %s(%s)\n', num2str(sum(gmresits)),num2str(gmresits));
 end

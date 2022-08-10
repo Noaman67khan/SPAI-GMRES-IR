@@ -1,9 +1,9 @@
-function x = sgmresir3(A,Q,b,precf,precw,precr,iter_max, gtol)
-%SGMRESIR   GMRES-based iterative refinement in three precisions using LU preconditioning.
-%     Solves Ax = b using GMRES-based
-%     iterative refinement (with at most iter_max ref. steps), using double 
-%     the working precision for applying the preconditioned matrix, with
-%     LU factors computed in precision precf:
+function x = sgmresir3_spai_scaling(A, b, espai, alpha, beta, precf, precw, precr, iter_max, gtol)
+%GMRESIR3_SPAI  GMRES-based iterative refinement in three precisions using SPAI preconditioning.
+%     Solves Ax = b using gmres-based
+%     iterative refinement with at most iter_max ref. steps and GMRES convergence
+%     tolerance gtol, with
+%     M computed in precision precf:
 %       * half if precf = 0,
 %       * single if precf = 1,
 %       * double if precf = 2,
@@ -15,7 +15,8 @@ function x = sgmresir3(A,Q,b,precf,precw,precr,iter_max, gtol)
 %       * single if precr = 1,
 %       * double if precr = 2,
 %       * quad if precr = 4
-%     The working precision is used throughout the calls to GMRES
+%     Within GMRES, the preconditioned system is applied in the
+%     working precision.
 %
 % Note: requires Advanpix multiprecision toolbox, 
 % chop library (https://github.com/higham/chop), and 
@@ -28,112 +29,75 @@ if precr ~=1 && precr ~= 2 && precr ~= 4, error('precr should be 1, 2, or 4'), e
 n = length(A);
 
 if precf == 1
-   % fprintf('**** Factorization precision is single.\n')
-    ufs = 'single';
+    %fprintf('**** Factorization precision is single.\n')
+    ufs = 'S';
 elseif precf == 2
-   % fprintf('**** Factorization precision is double.\n')
-    ufs = 'double';
+    %fprintf('**** Factorization precision is double.\n')
+    ufs = 'D';
 else
-   % fprintf('**** Factorization precision is half.\n')
-    ufs = 'half';
-    fp.format = 'h';
-    chop([],fp);
-    
+    %fprintf('**** Factorization precision is half.\n')
+    ufs = 'H';
 end
 
 if precw == 0
-   % fprintf('**** Working precision is half.\n')
-    uws = 'half';
-    uws1 = 'h';
-    u = float_params('h');
+    %fprintf('**** Working precision is half.\n')
+    uws = 'H';
+    A = chop(A);
+    b = chop(b);
+    u = eps(chop(1));
 elseif precw == 2
-   % fprintf('**** Working precision is double.\n')
-    uws = 'double';
+    %fprintf('**** Working precision is double.\n')
+    uws = 'D';
     A = double(A);
     b = double(b);
     u = eps('double');
 else
-  %  fprintf('**** Working precision is single.\n')
-    uws = 'single';
+    %fprintf('**** Working precision is single.\n')
+    uws = 'S';
     A = single(A);
     b = single(b);
     u = eps('single');
 end
 
 if precr == 1
-   % fprintf('**** Residual precision is single.\n')
-    urs = 'single';
+    %fprintf('**** Residual precision is single.\n')
+    urs = 'S';
 elseif precr == 2
-   % fprintf('**** Residual precision is double.\n')
-    urs = 'double';
+    %fprintf('**** Residual precision is double.\n')
+    urs = 'D';
 else
-  %  fprintf('**** Residual precision is quad.\n')
-    urs = 'quad';
+    %fprintf('**** Residual precision is quad.\n')
+    urs = 'Q';
     mp.Digits(34);
 end
 
-xact = double(mp(double(A),34)\mp(double(b),34));
+xact = double(mp(double(A),34)\mp(double(b),34));  
 
-
-[uh,xmins,xmin,xmax] = float_params(ufs);
-
-
-
-%Compute LU factorization
+%Compute M using Spai
 if precf == 1
-    [L,U,P] = lu(single(Q*A*Q'));
-    nnzLU = nnz(L+U);
-    J = eye(n);
-    LL = single(double(Q')*double(P')*double(L));
-    U = single(U*Q);  
-    x =  U\(LL\(single(b)) );
-    %x =  U\(L\(P*single(b)) );
-
+    [B,D1,D2] = scale_diag_2side(A);
+    ATD = A'*D1;
+    M = spai_ss(ATD,espai,alpha,beta);
+    M = M'*D1';
+    x = M*single(b);
 elseif precf == 2
-    [L,U,P] = lu(double(A));
-    nnzLU = nnz(L+U);
-    LL = double(double(Q')*double(P')*double(L));
-    U = U*Q;
-    x =  U\(LL\(double(b)) );
-    %x =  U\(L\(P*double(b)) );
+    [B,D1,D2] = scale_diag_2side(A);
+    ATD = A'*D1;
+    M = spai_dd(ATD,espai,alpha,beta);
+    M = M'*D1';
+    x = M*double(b);
 else
-    Ah = chop(A);
-    [L,U,pp] = lutx_chop(Q*Ah*Q');
-    nnzLU = nnz(L+U);
-    I = chop(eye(n)); P = I(pp,:);
-    LL = chop(Q'*P'*L);
-    U = chop(U);
-    
-    % If L or U factors contain NAN or INF, try again with scaling
-    if ( sum(sum(isinf(single(LL))))>0 || sum(sum(isnan(single(LL))))>0 || sum(sum(isinf(single(U))))>0 || sum(sum(isnan(single(U))))>0 )
-        
-        [Ah,R,C] = scale_diag_2side(Q*A*Q');
-        mu = (0.1)*xmax;
-        Ah = mu*Ah;
-        
-        Ah = chop(Ah);
-        [L,U,p] = lutx_chop(Ah);
-        
-        I = chop(eye(n)); P = I(p,:);
-        LL = Q'*P'*L; 
-        LL = (1/mu)*diag(1./diag(R))*(LL);
-        U = (U*Q)*diag(1./diag(C));
-        x = U\(LL\b);
-    else
-        t1 = lp_matvec(Q,chop(b));
-        t1 = lp_matvec(P,chop(t1));
-        t1 = trisol(L,b);
-        y = trisol(U,t1);
-        x = lp_matvec(Q', chop(y));
-        U = chop(U*Q);
-    end
-    
+    [B,D1,D2] = scale_diag_2side(A);
+    ATD = A'*D1;
+    M = spai_hh(ATD,espai,alpha,beta);
+    M = M'*D1';
+    x = M*chop(b);
 end
 
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
+At = double(mp(double(M),34))*mp(double(A),34);
 kinfA = cond(mp(double(A),34),'inf');
-At = double(mp(double(U),34)\(mp(double(LL),34)\( mp(double(A),34))));
 kinfAt = cond(mp(double(At),34),'inf');
 condAx = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34))*abs(xact),inf)/norm(xact,inf);
 condA = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34)),'inf');
@@ -165,7 +129,7 @@ gmreserr = [];
 
 while ~cged
     
-   %Compute size of errors, quantities in bounds
+    %Compute size of errors, quantities in bounds
     ferr(iter+1) = double(norm(mp(double(x),34)-mp(xact,34),'inf')/norm(mp(xact,34),'inf'));
     mu(iter+1) = norm(double(A)*(mp(double(x),34)-mp(xact,34)),'inf')/(norm(mp(double(A),34),'inf')*norm(mp(double(x),34)-mp(xact,34),'inf')); 
     res = double(b) - double(A)*double(x);
@@ -195,13 +159,12 @@ while ~cged
     
     %Call GMRES to solve for correction term
     if precw == 0
-        [d, err, its, ~] = gmres_hh( A, chop(zeros(n,1)), chop(rd1), LL, U, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_hh( A, chop(zeros(n,1)), chop(rd1), M, n, 1, gtol);
     elseif precw == 2
-        [d, err, its, ~] = gmres_dd( A, zeros(n,1), double(rd1), LL, U, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_dd( A, zeros(n,1), double(rd1), M, n, 1, gtol);
     else
-        [d, err, its, ~] = gmres_ss( A, single(zeros(n,1)), single(rd1), LL, U, n, 1, gtol);
+        [d, err, its, ~] = gmres_spai_ss( A, single(zeros(n,1)), single(rd1), M, n, 1, gtol);
     end
-    
     
     %Compute quantities in bounds for plotting
     lim(iter) = double( 2*u*cond(mp(double(A),34),'inf')*mu(iter));
@@ -240,8 +203,8 @@ while ~cged
     
 end
 
-%Generate plots
 
+%Generate plots
 %Create ferr, nbe, cbe plot
 fig1 = figure();
 semilogy(0:iter-1, ferr, '-rx');
@@ -252,13 +215,17 @@ semilogy(0:iter-1, cbe, '-gv');
 hold on
 semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
 
-if (nargin==10)
-xlim([0 lim_num])
-ylim([10.^(-30) 10.^(1)]);
-xx = lim_num-numel(ferr)+2;
-hold on
-semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
+%%%%%%%%%%%%%%%%%%%
+if (nargin==13)
+    xlim([0 lim_num])
+    xx = lim_num-numel(ferr)+2;
+    hold on
+    axis manual
+    semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
+    hold off
+    %ylim([10.^(-30) 10]);
 end
+%%%%%%%%%%%%%%%%%%%
 %Ensure only integers labeled on x axis
 atm = get(gca,'xticklabels');
 m = str2double(atm);
@@ -273,18 +240,23 @@ end
 set(gca,'xticklabels',xlab);
 set(gca,'xtick',xlab);
 xlabel({'refinement step'},'Interpreter','latex');
-
-str_e = sprintf('%0.1e',kinfA);
-str_a = sprintf('%0.1e',kinfAt);
-%str_eps = sprintf('%0.1f',espai);
-%iter = sprintf('GMRES its = %s\n', num2str(gmresits));
-tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
-title(tt,'Interpreter','latex');
-
-set(gca,'FontSize',15)
+%%%%%%%%%%%%%%
+set(gca,'FontSize',14)
 a = get(gca,'Children');
 set(a,'LineWidth',1);
 set(a,'MarkerSize',10);
+
+
+%tt = strcat('SGMRES-IR');
+%title(tt,'Interpreter','latex');
+%%%%%%%%%%%%%%%%
+
+str_e = sprintf('%0.1e',kinfA);
+str_a = sprintf('%0.1e',kinfAt);
+str_eps = sprintf('%0.1f',espai);
+%iter = sprintf('GMRES its = %s\n', num2str(gmresits));
+tt = strcat('SPAI-GMRES-IR-scaling,  $$\, \kappa_{\infty}(\tilde{A}) = ',str_a,', \, \varepsilon = $$',str_eps); 
+title(tt,'Interpreter','latex');
 
 h = legend('ferr','nbe','cbe');
 set(h,'Interpreter','latex');
@@ -313,11 +285,7 @@ title(tt,'Interpreter','latex');
 % if ~isempty(savename)
 %     saveas(gcf, strcat(savename,'.pdf'));
 % end
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
-% end
 
-fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d, kinf(At) = %s\n', nnz(A), nnzLU, nnz(inv(A)), str_a);
+fprintf('nnz(A) = %d, nnz(M) = %d, eps = %s, kinf(At) = %s\n', nnz(A), nnz(M), str_eps, str_a);
 fprintf('GMRES its = %s(%s)\n', num2str(sum(gmresits)),num2str(gmresits));
-
 end

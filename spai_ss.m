@@ -11,7 +11,9 @@ n = length(A);
 J = speye(n);
 I = eye(n);
 M = single(zeros(n));
+
 for k = 1:n
+
     %ek is kth column of identity
     ek = I(:,k);
     %Get index set Jk
