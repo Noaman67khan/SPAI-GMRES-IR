@@ -265,7 +265,7 @@ title(tt,'Interpreter','latex');
 %     saveas(gcf, strcat(savename,'.pdf'));
 % end
 [L,U]=lu(A);
-fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(L+U), nnz(inv(A)));
+%fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(L+U), nnz(inv(A)));
 fprintf('GMRES its = %s\n', num2str(gmresits));
 
 end

@@ -102,12 +102,12 @@ else
     nnzLU = nnz(L+U);
     I = chop(eye(n)); P = I(pp,:);
     LL = chop(Q'*P'*L);
-    U = chop(U*Q);
+    U = chop(U);
     
     % If L or U factors contain NAN or INF, try again with scaling
     if ( sum(sum(isinf(single(LL))))>0 || sum(sum(isnan(single(LL))))>0 || sum(sum(isinf(single(U))))>0 || sum(sum(isnan(single(U))))>0 )
         
-        [Ah,R,C] = scale_diag_2side(A);
+        [Ah,R,C] = scale_diag_2side(Q*A*Q');
         mu = (0.1)*xmax;
         Ah = mu*Ah;
         
@@ -115,14 +115,17 @@ else
         [L,U,p] = lutx_chop(Ah);
         
         I = chop(eye(n)); P = I(p,:);
-        LL = P'*L; 
+        LL = Q'*P'*L; 
         LL = (1/mu)*diag(1./diag(R))*(LL);
-        U = (U)*diag(1./diag(C));
+        U = (U*Q)*diag(1./diag(C));
         x = U\(LL\b);
     else
-        %t1 = lp_matvec(P,chop(b));
-        t1 = trisol(LL,b);
-        x = trisol(U,t1);
+        t1 = lp_matvec(Q,chop(b));
+        t1 = lp_matvec(P,chop(t1));
+        t1 = trisol(L,b);
+        y = trisol(U,t1);
+        x = lp_matvec(Q', chop(y));
+        U = chop(U*Q);
     end
     
 end
@@ -130,6 +133,8 @@ end
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
 kinfA = cond(mp(double(A),34),'inf');
+At = double(mp(double(U),34)\(mp(double(LL),34)\( mp(double(A),34))));
+kinfAt = cond(mp(double(At),34),'inf');
 condAx = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34))*abs(xact),inf)/norm(xact,inf);
 condA = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34)),'inf');
 
@@ -270,6 +275,7 @@ set(gca,'xtick',xlab);
 xlabel({'refinement step'},'Interpreter','latex');
 
 str_e = sprintf('%0.1e',kinfA);
+str_a = sprintf('%0.1e',kinfAt);
 %str_eps = sprintf('%0.1f',espai);
 %iter = sprintf('GMRES its = %s\n', num2str(gmresits));
 tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
@@ -311,7 +317,7 @@ title(tt,'Interpreter','latex');
 %     saveas(gcf, strcat(savename,'.pdf'));
 % end
 
-fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnzLU, nnz(inv(A)));
+fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d, kinf(At) = %s\n', nnz(A), nnzLU, nnz(inv(A)), str_a);
 fprintf('GMRES its = %s\n', num2str(gmresits));
 
 end
