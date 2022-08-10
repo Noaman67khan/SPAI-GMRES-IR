@@ -1,9 +1,10 @@
 %Example script for comparing GMRES-IR, GMRESIR_SPAI and GMRESIR_NP (with 3 precisions)
 
-clc;
-clear all
-load('pores_3');
+% clc;
+% clear all
+load('steam3');
 A = Problem.A;
+n = size(A,1);
 
 % Find best reordering
 [L,U] = lu(A);
@@ -29,23 +30,26 @@ nnzND = nnz(L+U);
 
 switch ind
     case 1
-        Ap = A;
         besto = 'nat';
+        prm = [1:n]';
     case 2
-        Ap = A(q,q);
         besto = 'clp';
+        prm = q;
     case 3
-        Ap = A(d,d);
         besto = 'rcm';
+        prm = d;
     case 4
-        Ap = A(r,r);
         besto = 'amd';
+        prm = r;
     case 5
-        Ap = A(p,p);
         besto = 'nds';
+        prm = p;
 end
 
 besto
+I = eye(n);
+Q = I(prm,:);
+
 % Run experiments
-generateplots(A, Ap, 1, 2, 4, 1e-8, .3, 5, 8, 15)
+generateplots(A, Q, 1, 2, 4, 1e-8, .5, 10, 8, 15)
 

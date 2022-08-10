@@ -1,4 +1,4 @@
-function x = sgmresir3(A,b,precf,precw,precr,iter_max, gtol)
+function x = sgmresir3(A,Q,b,precf,precw,precr,iter_max, gtol)
 %SGMRESIR   GMRES-based iterative refinement in three precisions using LU preconditioning.
 %     Solves Ax = b using GMRES-based
 %     iterative refinement (with at most iter_max ref. steps), using double 
@@ -74,24 +74,35 @@ end
 
 xact = double(mp(double(A),34)\mp(double(b),34));
 
+
 [uh,xmins,xmin,xmax] = float_params(ufs);
 
 
 
 %Compute LU factorization
 if precf == 1
-    [L,U,P] = lu(single(A));
-    LL = single(double(P')*double(L));
-    x =  U\(L\(P*single(b)) );
+    [L,U,P] = lu(single(Q*A*Q'));
+    nnzLU = nnz(L+U);
+    J = eye(n);
+    LL = single(double(Q')*double(P')*double(L));
+    U = single(U*Q);  
+    x =  U\(LL\(single(b)) );
+    %x =  U\(L\(P*single(b)) );
+
 elseif precf == 2
     [L,U,P] = lu(double(A));
-    LL = double(double(P')*double(L));
-    x =  U\(L\(P*double(b)) );
+    nnzLU = nnz(L+U);
+    LL = double(double(Q')*double(P')*double(L));
+    U = U*Q;
+    x =  U\(LL\(double(b)) );
+    %x =  U\(L\(P*double(b)) );
 else
     Ah = chop(A);
-    [L,U,p] = lutx_chop(Ah);
-    I = chop(eye(n)); P = I(p,:);
-    LL = P'*L;
+    [L,U,pp] = lutx_chop(Q*Ah*Q');
+    nnzLU = nnz(L+U);
+    I = chop(eye(n)); P = I(pp,:);
+    LL = chop(Q'*P'*L);
+    U = chop(U*Q);
     
     % If L or U factors contain NAN or INF, try again with scaling
     if ( sum(sum(isinf(single(LL))))>0 || sum(sum(isnan(single(LL))))>0 || sum(sum(isinf(single(U))))>0 || sum(sum(isnan(single(U))))>0 )
@@ -102,14 +113,15 @@ else
         
         Ah = chop(Ah);
         [L,U,p] = lutx_chop(Ah);
+        
         I = chop(eye(n)); P = I(p,:);
         LL = P'*L; 
         LL = (1/mu)*diag(1./diag(R))*(LL);
         U = (U)*diag(1./diag(C));
         x = U\(LL\b);
     else
-        t1 = lp_matvec(P,chop(b));
-        t1 = trisol(L,t1);
+        %t1 = lp_matvec(P,chop(b));
+        t1 = trisol(LL,b);
         x = trisol(U,t1);
     end
     
@@ -298,8 +310,8 @@ title(tt,'Interpreter','latex');
 % if ~isempty(savename)
 %     saveas(gcf, strcat(savename,'.pdf'));
 % end
-[L,U]=lu(A);
-fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(L+U), nnz(inv(A)));
+
+fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnzLU, nnz(inv(A)));
 fprintf('GMRES its = %s\n', num2str(gmresits));
 
 end
