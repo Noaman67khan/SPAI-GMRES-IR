@@ -240,82 +240,82 @@ while ~cged
     
 end
 
-%Generate plots
-
-%Create ferr, nbe, cbe plot
-fig1 = figure();
-semilogy(0:iter-1, ferr, '-rx');
-hold on
-semilogy(0:iter-1, nbe, '-bo');
-hold on
-semilogy(0:iter-1, cbe, '-gv');
-hold on
-semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
-
-if (nargin==10)
-xlim([0 lim_num])
-ylim([10.^(-30) 10.^(1)]);
-xx = lim_num-numel(ferr)+2;
-hold on
-semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
-end
-%Ensure only integers labeled on x axis
-atm = get(gca,'xticklabels');
-m = str2double(atm);
-xlab = [];
-num = 1;
-for i = 1:numel(m)
-    if ceil(m(i)) == m(i)
-        xlab(num) = m(i);
-        num = num + 1;
-    end
-end
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-str_e = sprintf('%0.1e',kinfA);
-str_a = sprintf('%0.1e',kinfAt);
-%str_eps = sprintf('%0.1f',espai);
-%iter = sprintf('GMRES its = %s\n', num2str(gmresits));
-tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
-title(tt,'Interpreter','latex');
-
-set(gca,'FontSize',15)
-a = get(gca,'Children');
-set(a,'LineWidth',1);
-set(a,'MarkerSize',10);
-
-h = legend('ferr','nbe','cbe');
-set(h,'Interpreter','latex');
-
-% %Create phi plot
-%fig2 = figure();
-%semilogy(0:iter-2, lim, '-cx');
-%hold on
-%semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
-%hold on
-%semilogy(0:iter-2, etai, '-mo');
-%hold on
-%semilogy(0:iter-2, phi, '-kv');
-%hold on
-%semilogy(0:iter-1, ones(iter,1), '--k');
-
-%Use same x labels as error plot
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-title(tt,'Interpreter','latex');
-
-%h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
-%set(h,'Interpreter','latex');
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
+% %Generate plots
+% 
+% %Create ferr, nbe, cbe plot
+% fig1 = figure();
+% semilogy(0:iter-1, ferr, '-rx');
+% hold on
+% semilogy(0:iter-1, nbe, '-bo');
+% hold on
+% semilogy(0:iter-1, cbe, '-gv');
+% hold on
+% semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
+% 
+% if (nargin==10)
+% xlim([0 lim_num])
+% ylim([10.^(-30) 10.^(1)]);
+% xx = lim_num-numel(ferr)+2;
+% hold on
+% semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
 % end
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
+% %Ensure only integers labeled on x axis
+% atm = get(gca,'xticklabels');
+% m = str2double(atm);
+% xlab = [];
+% num = 1;
+% for i = 1:numel(m)
+%     if ceil(m(i)) == m(i)
+%         xlab(num) = m(i);
+%         num = num + 1;
+%     end
 % end
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% str_e = sprintf('%0.1e',kinfA);
+ str_a = sprintf('%0.1e',kinfAt);
+% %str_eps = sprintf('%0.1f',espai);
+% %iter = sprintf('GMRES its = %s\n', num2str(gmresits));
+% tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
+% title(tt,'Interpreter','latex');
+% 
+% set(gca,'FontSize',15)
+% a = get(gca,'Children');
+% set(a,'LineWidth',1);
+% set(a,'MarkerSize',10);
+% 
+% h = legend('ferr','nbe','cbe');
+% set(h,'Interpreter','latex');
+% 
+% % %Create phi plot
+% %fig2 = figure();
+% %semilogy(0:iter-2, lim, '-cx');
+% %hold on
+% %semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
+% %hold on
+% %semilogy(0:iter-2, etai, '-mo');
+% %hold on
+% %semilogy(0:iter-2, phi, '-kv');
+% %hold on
+% %semilogy(0:iter-1, ones(iter,1), '--k');
+% 
+% %Use same x labels as error plot
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% title(tt,'Interpreter','latex');
+% 
+% %h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
+% %set(h,'Interpreter','latex');
+% % if ~isempty(savename)
+% %     saveas(gcf, strcat(savename,'.pdf'));
+% % end
+% % if ~isempty(savename)
+% %     saveas(gcf, strcat(savename,'.pdf'));
+% % end
 
 fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d, kinf(At) = %s\n', nnz(A), nnzLU, nnz(inv(A)), str_a);
 fprintf('GMRES its = %s(%s)\n', num2str(sum(gmresits)),num2str(gmresits));

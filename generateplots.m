@@ -10,7 +10,7 @@ b = b./norm(b);
 % gmresir3(full(Ap),b,uf,u,ur,maxit,gtol);
 
 fprintf('Running SGMRES-IR\n');
-sgmresir3(full(A),Q,b,uf,u,ur,maxit,gtol);
+gmresir3(full(A),Q,b,uf,u,ur,maxit,gtol);
 
 % fprintf('Running GMRESIR_SPAI\n');
 % gmresir3_spai(full(A), b, espai, alpha, beta, uf, u, ur, maxit, gtol);

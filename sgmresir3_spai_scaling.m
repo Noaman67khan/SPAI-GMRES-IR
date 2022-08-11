@@ -29,68 +29,76 @@ if precr ~=1 && precr ~= 2 && precr ~= 4, error('precr should be 1, 2, or 4'), e
 n = length(A);
 
 if precf == 1
-    %fprintf('**** Factorization precision is single.\n')
-    ufs = 'S';
+   % fprintf('**** Factorization precision is single.\n')
+    ufs = 'single';
 elseif precf == 2
-    %fprintf('**** Factorization precision is double.\n')
-    ufs = 'D';
+   % fprintf('**** Factorization precision is double.\n')
+    ufs = 'double';
 else
-    %fprintf('**** Factorization precision is half.\n')
-    ufs = 'H';
+   % fprintf('**** Factorization precision is half.\n')
+    ufs = 'half';
+    fp.format = 'h';
+    chop([],fp);
+    
 end
 
 if precw == 0
-    %fprintf('**** Working precision is half.\n')
-    uws = 'H';
-    A = chop(A);
-    b = chop(b);
-    u = eps(chop(1));
+   % fprintf('**** Working precision is half.\n')
+    uws = 'half';
+    uws1 = 'h';
+    u = float_params('h');
 elseif precw == 2
-    %fprintf('**** Working precision is double.\n')
-    uws = 'D';
+   % fprintf('**** Working precision is double.\n')
+    uws = 'double';
     A = double(A);
     b = double(b);
     u = eps('double');
 else
-    %fprintf('**** Working precision is single.\n')
-    uws = 'S';
+  %  fprintf('**** Working precision is single.\n')
+    uws = 'single';
     A = single(A);
     b = single(b);
     u = eps('single');
 end
 
 if precr == 1
-    %fprintf('**** Residual precision is single.\n')
-    urs = 'S';
+   % fprintf('**** Residual precision is single.\n')
+    urs = 'single';
 elseif precr == 2
-    %fprintf('**** Residual precision is double.\n')
-    urs = 'D';
+   % fprintf('**** Residual precision is double.\n')
+    urs = 'double';
 else
-    %fprintf('**** Residual precision is quad.\n')
-    urs = 'Q';
+  %  fprintf('**** Residual precision is quad.\n')
+    urs = 'quad';
     mp.Digits(34);
 end
 
 xact = double(mp(double(A),34)\mp(double(b),34));  
 
+[uh,xmins,xmin,xmax] = float_params(ufs);
+
 %Compute M using Spai
 if precf == 1
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = A'*D1;
+    ATD = D2*A'*D1;
     M = spai_ss(ATD,espai,alpha,beta);
-    M = M'*D1';
+    M = single(D2*M'*D1);
     x = M*single(b);
 elseif precf == 2
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = A'*D1;
+    ATD = D2*A'*D1;
     M = spai_dd(ATD,espai,alpha,beta);
-    M = M'*D1';
+    M = double(D2*M'*D1);
     x = M*double(b);
 else
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = A'*D1;
+    mu = (0.1)*xmax;
+    B = mu*B;
+    B = chop(B);
+    ATD = B';
     M = spai_hh(ATD,espai,alpha,beta);
-    M = M'*D1';
+    M = mu*D2*M'*D1;
+    M = chop(M);
     x = M*chop(b);
 end
 
@@ -203,88 +211,88 @@ while ~cged
     
 end
 
-
-%Generate plots
-%Create ferr, nbe, cbe plot
-fig1 = figure();
-semilogy(0:iter-1, ferr, '-rx');
-hold on
-semilogy(0:iter-1, nbe, '-bo');
-hold on
-semilogy(0:iter-1, cbe, '-gv');
-hold on
-semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
-
-%%%%%%%%%%%%%%%%%%%
-if (nargin==13)
-    xlim([0 lim_num])
-    xx = lim_num-numel(ferr)+2;
-    hold on
-    axis manual
-    semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
-    hold off
-    %ylim([10.^(-30) 10]);
-end
-%%%%%%%%%%%%%%%%%%%
-%Ensure only integers labeled on x axis
-atm = get(gca,'xticklabels');
-m = str2double(atm);
-xlab = [];
-num = 1;
-for i = 1:numel(m)
-    if ceil(m(i)) == m(i)
-        xlab(num) = m(i);
-        num = num + 1;
-    end
-end
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-%%%%%%%%%%%%%%
-set(gca,'FontSize',14)
-a = get(gca,'Children');
-set(a,'LineWidth',1);
-set(a,'MarkerSize',10);
-
-
-%tt = strcat('SGMRES-IR');
-%title(tt,'Interpreter','latex');
-%%%%%%%%%%%%%%%%
-
-str_e = sprintf('%0.1e',kinfA);
-str_a = sprintf('%0.1e',kinfAt);
-str_eps = sprintf('%0.1f',espai);
-%iter = sprintf('GMRES its = %s\n', num2str(gmresits));
-tt = strcat('SPAI-GMRES-IR-scaling,  $$\, \kappa_{\infty}(\tilde{A}) = ',str_a,', \, \varepsilon = $$',str_eps); 
-title(tt,'Interpreter','latex');
-
-h = legend('ferr','nbe','cbe');
-set(h,'Interpreter','latex');
-
-% %Create phi plot
-%fig2 = figure();
-%semilogy(0:iter-2, lim, '-cx');
-%hold on
-%semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
-%hold on
-%semilogy(0:iter-2, etai, '-mo');
-%hold on
-%semilogy(0:iter-2, phi, '-kv');
-%hold on
-%semilogy(0:iter-1, ones(iter,1), '--k');
-
-%Use same x labels as error plot
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-title(tt,'Interpreter','latex');
-
-%h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
-%set(h,'Interpreter','latex');
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
+% 
+% %Generate plots
+% %Create ferr, nbe, cbe plot
+% fig1 = figure();
+% semilogy(0:iter-1, ferr, '-rx');
+% hold on
+% semilogy(0:iter-1, nbe, '-bo');
+% hold on
+% semilogy(0:iter-1, cbe, '-gv');
+% hold on
+% semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
+% 
+% %%%%%%%%%%%%%%%%%%%
+% if (nargin==13)
+%     xlim([0 lim_num])
+%     xx = lim_num-numel(ferr)+2;
+%     hold on
+%     axis manual
+%     semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
+%     hold off
+%     %ylim([10.^(-30) 10]);
 % end
+% %%%%%%%%%%%%%%%%%%%
+% %Ensure only integers labeled on x axis
+% atm = get(gca,'xticklabels');
+% m = str2double(atm);
+% xlab = [];
+% num = 1;
+% for i = 1:numel(m)
+%     if ceil(m(i)) == m(i)
+%         xlab(num) = m(i);
+%         num = num + 1;
+%     end
+% end
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% %%%%%%%%%%%%%%
+% set(gca,'FontSize',14)
+% a = get(gca,'Children');
+% set(a,'LineWidth',1);
+% set(a,'MarkerSize',10);
+% 
+% 
+% %tt = strcat('SGMRES-IR');
+% %title(tt,'Interpreter','latex');
+% %%%%%%%%%%%%%%%%
+% 
+% str_e = sprintf('%0.1e',kinfA);
+ str_a = sprintf('%0.1e',kinfAt);
+ str_eps = sprintf('%0.1f',espai);
+% %iter = sprintf('GMRES its = %s\n', num2str(gmresits));
+% tt = strcat('SPAI-GMRES-IR-scaling,  $$\, \kappa_{\infty}(\tilde{A}) = ',str_a,', \, \varepsilon = $$',str_eps); 
+% title(tt,'Interpreter','latex');
+% 
+% h = legend('ferr','nbe','cbe');
+% set(h,'Interpreter','latex');
+% 
+% % %Create phi plot
+% %fig2 = figure();
+% %semilogy(0:iter-2, lim, '-cx');
+% %hold on
+% %semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
+% %hold on
+% %semilogy(0:iter-2, etai, '-mo');
+% %hold on
+% %semilogy(0:iter-2, phi, '-kv');
+% %hold on
+% %semilogy(0:iter-1, ones(iter,1), '--k');
+% 
+% %Use same x labels as error plot
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% title(tt,'Interpreter','latex');
+% 
+% %h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
+% %set(h,'Interpreter','latex');
+% % if ~isempty(savename)
+% %     saveas(gcf, strcat(savename,'.pdf'));
+% % end
 
 fprintf('nnz(A) = %d, nnz(M) = %d, eps = %s, kinf(At) = %s\n', nnz(A), nnz(M), str_eps, str_a);
 fprintf('GMRES its = %s(%s)\n', num2str(sum(gmresits)),num2str(gmresits));

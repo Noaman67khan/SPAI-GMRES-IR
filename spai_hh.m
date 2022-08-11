@@ -90,7 +90,7 @@ for k = 1:n
         
         
     end
-    %disp(k)
-%     M(Jk,k)= Mtk;    
+    % disp(k)
+%      M(Jk,k)
 end
 end

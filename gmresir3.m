@@ -1,4 +1,4 @@
-function x = gmresir3(A,b,precf,precw,precr,iter_max, gtol)
+function x = gmresir3(A,Q, b,precf,precw,precr,iter_max, gtol)
 %GMRESIR   GMRES-based iterative refinement in three precisions using LU preconditioning.
 %     Solves Ax = b using GMRES-based
 %     iterative refinement (with at most iter_max ref. steps), using double 
@@ -81,44 +81,61 @@ xact = double(mp(double(A),34)\mp(double(b),34));
 
 %Compute LU factorization
 if precf == 1
-    [L,U,P] = lu(single(A));
-    LL = single(double(P')*double(L));
-    x =  U\(L\(P*single(b)) );
+    [L,U,P] = lu(single(Q*A*Q'));
+    nnzLU = nnz(L+U);
+    J = eye(n);
+    LL = single(double(Q')*double(P')*double(L));
+    U = single(U*Q);  
+    x =  U\(LL\(single(b)) );
+    %x =  U\(L\(P*single(b)) );
+
 elseif precf == 2
     [L,U,P] = lu(double(A));
-    LL = double(double(P')*double(L));
-    x =  U\(L\(P*double(b)) );
+    nnzLU = nnz(L+U);
+    LL = double(double(Q')*double(P')*double(L));
+    U = U*Q;
+    x =  U\(LL\(double(b)) );
+    %x =  U\(L\(P*double(b)) );
 else
     Ah = chop(A);
-    [L,U,p] = lutx_chop(Ah);
-    I = chop(eye(n)); P = I(p,:);
-    LL = P'*L;
+    [L,U,pp] = lutx_chop(Q*Ah*Q');
+    nnzLU = nnz(L+U);
+    I = chop(eye(n)); P = I(pp,:);
+    LL = chop(Q'*P'*L);
+    U = chop(U);
     
     % If L or U factors contain NAN or INF, try again with scaling
     if ( sum(sum(isinf(single(LL))))>0 || sum(sum(isnan(single(LL))))>0 || sum(sum(isinf(single(U))))>0 || sum(sum(isnan(single(U))))>0 )
         
-        [Ah,R,C] = scale_diag_2side(A);
+        [Ah,R,C] = scale_diag_2side(Q*A*Q');
         mu = (0.1)*xmax;
         Ah = mu*Ah;
         
         Ah = chop(Ah);
         [L,U,p] = lutx_chop(Ah);
+        
         I = chop(eye(n)); P = I(p,:);
-        LL = P'*L; 
+        LL = Q'*P'*L; 
         LL = (1/mu)*diag(1./diag(R))*(LL);
-        U = (U)*diag(1./diag(C));
+        U = (U*Q)*diag(1./diag(C));
         x = U\(LL\b);
     else
-        t1 = lp_matvec(P,chop(b));
-        t1 = trisol(L,t1);
-        x = trisol(U,t1);
+        t1 = lp_matvec(Q,chop(b));
+        t1 = lp_matvec(P,chop(t1));
+        t1 = trisol(L,b);
+        y = trisol(U,t1);
+        x = lp_matvec(Q', chop(y));
+        U = chop(U*Q);
     end
     
 end
 
+
 %Compute condition number of A, of preconditioned system At, cond(A), and
 %cond(A,x) for the exact solution
 kinfA = cond(mp(double(A),34),'inf');
+At = double(mp(double(U),34)\(mp(double(LL),34)\( mp(double(A),34))));
+kinfAt = cond(mp(double(At),34),'inf');
 condAx = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34))*abs(xact),inf)/norm(xact,inf);
 condA = norm(abs(inv(mp(double(A),34)))*abs(mp(double(A),34)),'inf');
 
@@ -226,81 +243,81 @@ end
 
 %Generate plots
 
-%Create ferr, nbe, cbe plot
-fig1 = figure();
-semilogy(0:iter-1, ferr, '-rx');
-hold on
-semilogy(0:iter-1, nbe, '-bo');
-hold on
-semilogy(0:iter-1, cbe, '-gv');
-hold on
-semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
-
-if (nargin==10)
-xlim([0 lim_num])
-ylim([10.^(-30) 10.^(1)]);
-xx = lim_num-numel(ferr)+2;
-hold on
-semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
-end
-%Ensure only integers labeled on x axis
-atm = get(gca,'xticklabels');
-m = str2double(atm);
-xlab = [];
-num = 1;
-for i = 1:numel(m)
-    if ceil(m(i)) == m(i)
-        xlab(num) = m(i);
-        num = num + 1;
-    end
-end
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-str_e = sprintf('%0.1e',kinfA);
-%str_eps = sprintf('%0.1f',espai);
-%iter = sprintf('GMRES its = %s\n', num2str(gmresits));
-tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
-title(tt,'Interpreter','latex');
-
-set(gca,'FontSize',15)
-a = get(gca,'Children');
-set(a,'LineWidth',1);
-set(a,'MarkerSize',10);
-
-h = legend('ferr','nbe','cbe');
-set(h,'Interpreter','latex');
-
-% %Create phi plot
-%fig2 = figure();
-%semilogy(0:iter-2, lim, '-cx');
-%hold on
-%semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
-%hold on
-%semilogy(0:iter-2, etai, '-mo');
-%hold on
-%semilogy(0:iter-2, phi, '-kv');
-%hold on
-%semilogy(0:iter-1, ones(iter,1), '--k');
-
-%Use same x labels as error plot
-set(gca,'xticklabels',xlab);
-set(gca,'xtick',xlab);
-xlabel({'refinement step'},'Interpreter','latex');
-
-title(tt,'Interpreter','latex');
-
-%h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
-%set(h,'Interpreter','latex');
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
+% %Create ferr, nbe, cbe plot
+% fig1 = figure();
+% semilogy(0:iter-1, ferr, '-rx');
+% hold on
+% semilogy(0:iter-1, nbe, '-bo');
+% hold on
+% semilogy(0:iter-1, cbe, '-gv');
+% hold on
+% semilogy(0:iter-1, double(u)*ones(iter,1), '--k');
+% 
+% if (nargin==10)
+% xlim([0 lim_num])
+% ylim([10.^(-30) 10.^(1)]);
+% xx = lim_num-numel(ferr)+2;
+% hold on
+% semilogy(numel(nbe)-1:lim_num, double(u)*ones(xx,1), '--k');
 % end
-% if ~isempty(savename)
-%     saveas(gcf, strcat(savename,'.pdf'));
+% %Ensure only integers labeled on x axis
+% atm = get(gca,'xticklabels');
+% m = str2double(atm);
+% xlab = [];
+% num = 1;
+% for i = 1:numel(m)
+%     if ceil(m(i)) == m(i)
+%         xlab(num) = m(i);
+%         num = num + 1;
+%     end
 % end
-[L,U]=lu(A);
-fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d\n', nnz(A), nnz(L+U), nnz(inv(A)));
-fprintf('GMRES its = %s\n', num2str(gmresits));
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% str_e = sprintf('%0.1e',kinfA);
+str_a = sprintf('%0.1e',kinfAt);
+% %str_eps = sprintf('%0.1f',espai);
+% %iter = sprintf('GMRES its = %s\n', num2str(gmresits));
+% tt = strcat('GMRES-IR,  $$\, \kappa_{\infty}(A) = $$ ',str_e,'');    
+% title(tt,'Interpreter','latex');
+% 
+% set(gca,'FontSize',15)
+% a = get(gca,'Children');
+% set(a,'LineWidth',1);
+% set(a,'MarkerSize',10);
+% 
+% h = legend('ferr','nbe','cbe');
+% set(h,'Interpreter','latex');
+% 
+% % %Create phi plot
+% %fig2 = figure();
+% %semilogy(0:iter-2, lim, '-cx');
+% %hold on
+% %semilogy(0:iter-2, lim2, '-+','Color',[1 0.600000023841858 0.200000002980232]);
+% %hold on
+% %semilogy(0:iter-2, etai, '-mo');
+% %hold on
+% %semilogy(0:iter-2, phi, '-kv');
+% %hold on
+% %semilogy(0:iter-1, ones(iter,1), '--k');
+% 
+% %Use same x labels as error plot
+% set(gca,'xticklabels',xlab);
+% set(gca,'xtick',xlab);
+% xlabel({'refinement step'},'Interpreter','latex');
+% 
+% title(tt,'Interpreter','latex');
+% 
+% %h = legend('$u_s \Vert E_i \Vert_\infty$','$\phi_i$');
+% %set(h,'Interpreter','latex');
+% % if ~isempty(savename)
+% %     saveas(gcf, strcat(savename,'.pdf'));
+% % end
+% % if ~isempty(savename)
+% %     saveas(gcf, strcat(savename,'.pdf'));
+% % end
+fprintf('nnz(A) = %d, nnz(L+U) = %d, nnz(inv(A)) = %d, kinf(At) = %s\n', nnz(A), nnzLU, nnz(inv(A)), str_a);
+fprintf('GMRES its = %s(%s)\n', num2str(sum(gmresits)),num2str(gmresits));
 
 end
