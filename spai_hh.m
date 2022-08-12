@@ -6,10 +6,11 @@ function M = spai_hh(A,espai,alpha,beta)
 %   beta is the number of steps for adding nonzeros to the pattern
 %   M is the output sparse approximate inverse
 
-A = chop(A);
+
+A = (chop(sparse(double(A))));
 n = length(A);
 J = speye(n);
-I = eye(n);
+I = speye(n);
 M = zeros(n);
 
 for k = 1:n
@@ -21,11 +22,21 @@ for k = 1:n
     for step = 1:alpha
         %Construct set Ik
         Ik=[];
-        for i=1:n
-            if sum(abs(A(i,Jk)))~=0
-                Ik=[Ik i];
-            end
-        end
+%         Ik2=[];
+%         for i=1:n
+%             if sum(abs(A(i,Jk)))~=0
+%                 Ik=[Ik i];
+%             end
+%         end
+%    
+        inds  = find(any(A(:,Jk)~=0,2));
+        Ik = inds;
+      
+%         vv = zeros(n,1);
+%         vv(Jk) = 1;   
+%         inds = find(abs(A)*vv~=0);
+%         Ik = inds;%[Ik,inds];
+
         
         Atk = A(Ik,Jk);
         etk = ek(Ik);
@@ -51,12 +62,13 @@ for k = 1:n
         Jtk=[];
         for ll = 1:numel(Lk)
             l=Lk(ll);
-            Nl=[];
-            for j=1:n
-                if A(l,j)~=0
-                    Nl = union(Nl,j);
-                end
-            end
+
+%             for j=1:n
+%                 if A(l,j)~=0
+%                     Nl = union(Nl,j);
+%                 end
+%             end
+            Nl = find(A(l,:)~=0);
             Jtk = union(Jtk, Nl);
         end
         Jtk = setdiff(Jtk,Jk);
@@ -90,7 +102,7 @@ for k = 1:n
         
         
     end
-    % disp(k)
+     disp(k)
 %      M(Jk,k)
 end
 end

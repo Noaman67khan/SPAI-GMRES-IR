@@ -92,12 +92,9 @@ elseif precf == 2
     x = M*double(b);
 else
     [B,D1,D2] = scale_diag_2side(A);
-    mu = (0.1)*xmax;
-    B = mu*B;
-    B = chop(B);
-    ATD = B';
+    ATD = D2*A'*D1;
     M = spai_hh(ATD,espai,alpha,beta);
-    M = mu*D2*M'*D1;
+    M = D2*M'*D1;
     M = chop(M);
     x = M*chop(b);
 end
