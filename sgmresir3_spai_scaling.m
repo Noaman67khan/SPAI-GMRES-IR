@@ -80,21 +80,21 @@ xact = double(mp(double(A),34)\mp(double(b),34));
 %Compute M using Spai
 if precf == 1
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = D2*A'*D1;
+    ATD = A'*D1;
     M = spai_ss(ATD,espai,alpha,beta);
-    M = single(D2*M'*D1);
+    M = single(M'*D1);
     x = M*single(b);
 elseif precf == 2
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = D2*A'*D1;
+    ATD = A'*D1;
     M = spai_dd(ATD,espai,alpha,beta);
-    M = double(D2*M'*D1);
+    M = double(M'*D1);
     x = M*double(b);
 else
     [B,D1,D2] = scale_diag_2side(A);
-    ATD = D2*A'*D1;
+    ATD = A'*D1;
     M = spai_hh(ATD,espai,alpha,beta);
-    M = D2*M'*D1;
+    M = M'*D1;
     M = chop(M);
     x = M*chop(b);
 end
